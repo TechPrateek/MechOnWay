@@ -21,6 +21,7 @@ import {
   normalizeRequestStatus,
   getTimelineEventForStatus,
 } from "../lifecycle/status-machine";
+import { apiClient } from "../api/client";
 
 /**
  * Calculates distance in miles between two coordinates using Haversine formula
@@ -86,6 +87,27 @@ function ensureClientInitialized() {
   isClientInitialized = true;
   requestsState = getClientStorage(STORAGE_KEYS.REQUESTS, requestsState);
   mechanicsState = getClientStorage(STORAGE_KEYS.MECHANICS, mechanicsState);
+
+  // If deployed with API Gateway, synchronize initial state from remote cloud
+  if (apiClient.isConfigured()) {
+    apiClient.requests
+      .list()
+      .then((remote) => {
+        if (Array.isArray(remote) && remote.length > 0) {
+          persistRequests(remote);
+        }
+      })
+      .catch((err) => console.warn("Could not sync requests from API Gateway:", err));
+
+    apiClient.mechanics
+      .list()
+      .then((remote) => {
+        if (Array.isArray(remote) && remote.length > 0) {
+          persistMechanics(remote);
+        }
+      })
+      .catch((err) => console.warn("Could not sync mechanics from API Gateway:", err));
+  }
 }
 
 function persistRequests(updated: RoadsideRequest[]): void {
@@ -199,6 +221,19 @@ export const requestStore = {
     const updated = [newReq, ...current];
     persistRequests(updated);
 
+    // If connected to API Gateway, sync creation to cloud database
+    if (apiClient.isConfigured()) {
+      apiClient.requests
+        .create(input)
+        .then((remoteCreated) => {
+          if (remoteCreated && remoteCreated.id) {
+            const list = this.listAll().map((r) => (r.id === newReq.id ? remoteCreated : r));
+            persistRequests(list);
+          }
+        })
+        .catch((err) => console.error("Failed to sync created request to API Gateway:", err));
+    }
+
     return newReq;
   },
 
@@ -251,6 +286,19 @@ export const requestStore = {
     );
 
     if (!assigned) return null;
+
+    // If connected to API Gateway, sync match execution to backend
+    if (apiClient.isConfigured()) {
+      apiClient.requests
+        .match(requestId)
+        .then((res) => {
+          if (res && res.request) {
+            const all = this.listAll().map((r) => (r.id === requestId ? res.request : r));
+            persistRequests(all);
+          }
+        })
+        .catch((err) => console.error("Failed to sync match to API Gateway:", err));
+    }
 
     return {
       request: assigned.request,
@@ -417,6 +465,13 @@ export const requestStore = {
     current[idx] = updatedReq;
     persistRequests([...current]);
 
+    // If connected to API Gateway, sync status transition to cloud database
+    if (apiClient.isConfigured()) {
+      apiClient.requests
+        .updateStatus(id, input)
+        .catch((err) => console.error("Failed to sync status update to API Gateway:", err));
+    }
+
     // If completed or cancelled, release the mechanic
     if (
       (nextStatus === "COMPLETED" || nextStatus === "CANCELLED") &&
@@ -426,6 +481,20 @@ export const requestStore = {
     }
 
     return updatedReq;
+  },
+
+  async syncWithBackend(): Promise<RoadsideRequest[]> {
+    if (!apiClient.isConfigured()) return this.listAll();
+    try {
+      const remote = await apiClient.requests.list();
+      if (Array.isArray(remote)) {
+        persistRequests(remote);
+      }
+      return this.listAll();
+    } catch (err) {
+      console.warn("Manual request sync failed:", err);
+      return this.listAll();
+    }
   },
 
   rejectRequest(id: string, reason?: string): RoadsideRequest | null {
@@ -556,7 +625,29 @@ export const mechanicStore = {
     };
 
     persistMechanics([...list]);
+
+    // If connected to API Gateway, sync mechanic availability to cloud database
+    if (apiClient.isConfigured()) {
+      apiClient.mechanics
+        .updateStatus(id, status, nextOnline)
+        .catch((err) => console.error("Failed to sync mechanic status to API Gateway:", err));
+    }
+
     return list[idx];
+  },
+
+  async syncWithBackend(): Promise<Mechanic[]> {
+    if (!apiClient.isConfigured()) return this.listAll();
+    try {
+      const remote = await apiClient.mechanics.list();
+      if (Array.isArray(remote)) {
+        persistMechanics(remote);
+      }
+      return this.listAll();
+    } catch (err) {
+      console.warn("Manual mechanic sync failed:", err);
+      return this.listAll();
+    }
   },
 
   findBestMatch(

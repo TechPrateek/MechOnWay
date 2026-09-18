@@ -94,11 +94,13 @@ export interface Mechanic {
   ratingCount?: number;
   estimatedResponseTime: number; // Base response time in minutes
   currentStatus: "available" | "busy" | "offline" | "en_route" | "on_site";
-  status?: "idle" | "assigned" | "en_route" | "on_site"; // Backwards compatibility
+  status?: MechanicStatus; // Backwards compatibility
   certifications: string[];
   batteryPackCapabilities?: string[];
   towingCapacityTons?: number;
 }
+
+export type MechanicStatus = "idle" | "assigned" | "en_route" | "on_site";
 
 export interface MatchingRequestInput {
   requestId: string;

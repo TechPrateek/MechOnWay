@@ -1,0 +1,174 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  MechOnWay - Production-Quality Roadside Assistance Serverless Backend
+  Deploys DynamoDB on-demand tables, HTTP API Gateway, and ARM64 Node.js 20 Lambda.
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Deployment stage environment.
+
+Globals:
+  Function:
+    Timeout: 15
+    MemorySize: 256
+    Runtime: nodejs20.x
+    Architectures:
+      - arm64 # AWS Graviton2 provides ~20% lower cost and higher performance
+
+Resources:
+  # =================================================================
+  # Amazon DynamoDB Tables (On-Demand / PAY_PER_REQUEST: Zero Idle Cost)
+  # =================================================================
+  RequestsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      TableName: !Sub "MechOnWay-Requests-${Environment}"
+      BillingMode: PAY_PER_REQUEST # On-demand capacity: pay per read/write unit; $0 when no requests
+      AttributeDefinitions:
+        - AttributeName: requestId
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: requestId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: StatusCreatedAtIndex
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      SSESpecification:
+        SSEEnabled: true # AWS-owned KMS key encryption at rest (no additional fee)
+
+  MechanicsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      TableName: !Sub "MechOnWay-Mechanics-${Environment}"
+      BillingMode: PAY_PER_REQUEST # On-demand capacity: pay per read/write unit; $0 when no requests
+      AttributeDefinitions:
+        - AttributeName: mechanicId
+          AttributeType: S
+        - AttributeName: currentStatus
+          AttributeType: S
+        - AttributeName: rating
+          AttributeType: N
+      KeySchema:
+        - AttributeName: mechanicId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: StatusRatingIndex
+          KeySchema:
+            - AttributeName: currentStatus
+              KeyType: HASH
+            - AttributeName: rating
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      SSESpecification:
+        SSEEnabled: true
+
+  # =================================================================
+  # Amazon CloudWatch Log Group (Explicit Retention & Clean Teardown)
+  # Prevents indefinite log storage accumulation and orphan log groups
+  # =================================================================
+  BackendLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/mechonway-backend-${Environment}"
+      RetentionInDays: 7 # Auto-expire logs after 7 days to eliminate lingering storage charges
+
+  # =================================================================
+  # Amazon API Gateway (HTTP API v2: ~70% cheaper than REST API)
+  # =================================================================
+  MechOnWayHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins:
+          - "*"
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+          - X-Amz-Date
+          - X-Api-Key
+        AllowMethods:
+          - GET
+          - POST
+          - PATCH
+          - OPTIONS
+        MaxAge: 300
+
+  # =================================================================
+  # AWS Lambda Backend Function
+  # =================================================================
+  BackendFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "mechonway-backend-${Environment}"
+      CodeUri: ./
+      Handler: src/serverless/lambda-handler.handler
+      Description: Core serverless dispatch, matching, and lifecycle engine for MechOnWay
+      Environment:
+        Variables:
+          STORAGE_PROVIDER: dynamodb
+          DYNAMODB_TABLE_REQUESTS: !Ref RequestsTable
+          DYNAMODB_TABLE_MECHANICS: !Ref MechanicsTable
+          ENVIRONMENT: !Ref Environment
+      Policies:
+        # Least-privilege IAM permissions scoped exclusively to the two tables & indexes
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RequestsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MechanicsTable
+      Events:
+        ProxyApi:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MechOnWayHttpApi
+            Path: /{proxy+}
+            Method: ANY
+        RootApi:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MechOnWayHttpApi
+            Path: /
+            Method: ANY
+
+Outputs:
+  ApiEndpoint:
+    Description: HTTP API Gateway base endpoint URL for MechOnWay backend
+    Value: !Sub "https://${MechOnWayHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+    Export:
+      Name: !Sub "${AWS::StackName}-ApiEndpoint"
+
+  RequestsTableName:
+    Description: DynamoDB Requests Table Name
+    Value: !Ref RequestsTable
+
+  MechanicsTableName:
+    Description: DynamoDB Mechanics Table Name
+    Value: !Ref MechanicsTable
+
+  BackendLogGroupName:
+    Description: CloudWatch Log Group Name with 7-day auto-expiry
+    Value: !Ref BackendLogGroup
+
+  BackendFunctionArn:
+    Description: Lambda Backend Function ARN
+    Value: !GetAtt BackendFunction.Arn

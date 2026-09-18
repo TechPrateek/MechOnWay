@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { mechanicStore } from "@/lib/data/store";
+import { mechanicService } from "@/lib/services";
 import { z } from "zod";
 
 const updateMechanicSchema = z.object({
@@ -13,10 +13,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const onlineOnly = searchParams.get("online") === "true";
 
-    let mechanics = mechanicStore.listAll();
-    if (onlineOnly) {
-      mechanics = mechanics.filter((m) => m.isOnline);
-    }
+    const mechanics = await mechanicService.listMechanics({ onlineOnly });
 
     return NextResponse.json({ success: true, data: mechanics });
   } catch (error) {
@@ -40,7 +37,7 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const current = mechanicStore.getById(validated.data.id);
+    const current = await mechanicService.getById(validated.data.id);
     if (!current) {
       return NextResponse.json(
         { success: false, error: "Mechanic not found" },
@@ -48,9 +45,9 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const updated = mechanicStore.updateStatus(
+    const updated = await mechanicService.updateStatus(
       validated.data.id,
-      validated.data.status ?? current.status,
+      validated.data.status ?? current.status ?? "idle",
       validated.data.isOnline
     );
 

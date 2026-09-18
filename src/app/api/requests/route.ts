@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { requestStore } from "@/lib/data/store";
+import { requestService } from "@/lib/services";
 import { createRequestSchema } from "@/lib/validations/request";
 
 export async function GET() {
   try {
-    const requests = requestStore.listAll();
+    const requests = await requestService.listAll();
     return NextResponse.json({ success: true, data: requests });
   } catch (error) {
     console.error("Failed to list requests:", error);
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const newRequest = requestStore.create(validated.data);
+    const newRequest = await requestService.createRequest(validated.data);
     return NextResponse.json(
       { success: true, data: newRequest },
       { status: 201 }

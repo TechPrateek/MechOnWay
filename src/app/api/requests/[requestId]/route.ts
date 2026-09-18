@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requestStore } from "@/lib/data/store";
+import { requestService } from "@/lib/services";
 import { updateRequestStatusSchema } from "@/lib/validations/request";
 
 interface RouteContext {
@@ -9,7 +9,7 @@ interface RouteContext {
 export async function GET(req: NextRequest, context: RouteContext) {
   try {
     const { requestId } = await context.params;
-    const request = requestStore.getById(requestId);
+    const request = await requestService.getById(requestId);
 
     if (!request) {
       return NextResponse.json(
@@ -45,14 +45,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       );
     }
 
-    const updated = requestStore.updateStatus(requestId, validated.data);
-
-    if (!updated) {
-      return NextResponse.json(
-        { success: false, error: "Roadside request not found" },
-        { status: 404 }
-      );
-    }
+    const updated = await requestService.updateStatus(requestId, validated.data);
 
     return NextResponse.json({ success: true, data: updated });
   } catch (error: unknown) {

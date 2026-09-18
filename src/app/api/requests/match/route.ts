@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requestStore } from "@/lib/data/store";
+import { requestService } from "@/lib/services";
 import { z } from "zod";
 
 const matchSchema = z.object({
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const result = requestStore.matchAndAssign(validated.data.requestId);
+    const result = await requestService.matchAndAssign(validated.data.requestId);
 
     if (!result) {
       return NextResponse.json(

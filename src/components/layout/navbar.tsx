@@ -14,6 +14,7 @@ import {
   PhoneCall,
 } from "lucide-react";
 import { Button } from "@/components/common/button";
+import { CloudStatusBadge } from "@/components/common/cloud-status-badge";
 import { cn } from "@/lib/utils";
 
 export function Navbar() {
@@ -110,6 +111,7 @@ export function Navbar() {
 
           {/* Action CTAs */}
           <div className="hidden sm:flex items-center gap-3">
+            <CloudStatusBadge />
             <Link href="/customer/request">
               <Button
                 variant="emergency"
