@@ -122,20 +122,23 @@ Resources:
     Properties:
       FunctionName: !Sub "mechonway-backend-${Environment}"
       CodeUri: ./
-      Handler: src/serverless/lambda-handler.handler
+      Handler: lambda-handler.handler
       Description: Core serverless dispatch, matching, and lifecycle engine for MechOnWay
+
       Environment:
         Variables:
-          STORAGE_PROVIDER: dynamodb
+          STORAGE_PROVIDER: local
+          LOCAL_DATA_DIR: /tmp/mechonway-data
           DYNAMODB_TABLE_REQUESTS: !Ref RequestsTable
           DYNAMODB_TABLE_MECHANICS: !Ref MechanicsTable
           ENVIRONMENT: !Ref Environment
+
       Policies:
-        # Least-privilege IAM permissions scoped exclusively to the two tables & indexes
         - DynamoDBCrudPolicy:
             TableName: !Ref RequestsTable
         - DynamoDBCrudPolicy:
             TableName: !Ref MechanicsTable
+
       Events:
         ProxyApi:
           Type: HttpApi
@@ -143,12 +146,22 @@ Resources:
             ApiId: !Ref MechOnWayHttpApi
             Path: /{proxy+}
             Method: ANY
+
         RootApi:
           Type: HttpApi
           Properties:
             ApiId: !Ref MechOnWayHttpApi
             Path: /
             Method: ANY
+
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/serverless/lambda-handler.ts
+        Target: es2020
+        Sourcemap: true
+        Minify: false
 
 Outputs:
   ApiEndpoint:

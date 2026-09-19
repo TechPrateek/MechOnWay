@@ -1,5 +1,5 @@
-import { requestService, mechanicService } from "@/lib/services";
-import { createRequestSchema, updateRequestStatusSchema } from "@/lib/validations/request";
+import { requestService, mechanicService } from "../lib/services";
+import { createRequestSchema, updateRequestStatusSchema } from "../lib/validations/request";
 import { z } from "zod";
 
 const matchSchema = z.object({
@@ -120,7 +120,7 @@ export async function handler(event: LambdaHttpEvent): Promise<LambdaHttpRespons
     }
 
     // Route: /api/requests/{requestId}
-    const reqDetailMatch = path.match(/(?:\/api)?\/requests\/([a-zA-Z0-9_-]+)$/);
+    const reqDetailMatch = path.match(/(?:\/api)?\/requests\/(?!match$)([a-zA-Z0-9_-]+)$/);
     if (reqDetailMatch) {
       const requestId = reqDetailMatch[1];
 
@@ -137,8 +137,13 @@ export async function handler(event: LambdaHttpEvent): Promise<LambdaHttpRespons
         if (!validated.success) {
           return jsonResponse(400, { success: false, error: "Validation failed", details: validated.error.flatten() });
         }
-        const updated = await requestService.updateStatus(requestId, validated.data);
-        return jsonResponse(200, { success: true, data: updated });
+        try {
+          const updated = await requestService.updateStatus(requestId, validated.data);
+          return jsonResponse(200, { success: true, data: updated });
+        } catch (updateErr: unknown) {
+          const message = updateErr instanceof Error ? updateErr.message : "Failed to update request status";
+          return jsonResponse(422, { success: false, error: message });
+        }
       }
     }
 
@@ -162,9 +167,30 @@ export async function handler(event: LambdaHttpEvent): Promise<LambdaHttpRespons
     // Route: /api/mechanics
     if (path.endsWith("/api/mechanics") || path.endsWith("/mechanics")) {
       if (method === "GET") {
+      
         const onlineOnly = event.queryStringParameters?.online === "true";
-        const mechanics = await mechanicService.listMechanics({ onlineOnly });
-        return jsonResponse(200, { success: true, data: mechanics });
+
+        console.log("=== MECHANICS DEBUG ===");
+        console.log("STORAGE_PROVIDER:", process.env.STORAGE_PROVIDER);
+        console.log("Online only:", onlineOnly);
+
+        try {
+          const mechanics = await mechanicService.listMechanics({ onlineOnly });
+
+          console.log("Mechanics result:", mechanics);
+
+          return jsonResponse(200, {
+            success: true,
+            data: mechanics,
+          });
+        } catch (error) {
+          console.error("MECHANICS SERVICE ERROR:", error);
+
+          return jsonResponse(500, {
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
       }
 
       if (method === "PATCH") {

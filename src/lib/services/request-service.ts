@@ -1,4 +1,4 @@
-﻿import {
+import {
   BreakdownCategory,
   Mechanic,
   RoadsideRequest,
@@ -28,12 +28,20 @@ export interface MatchAndAssignResult {
 }
 
 export class RequestService {
-  private requestRepo: IRequestRepository;
-  private mechanicRepo: IMechanicRepository;
+  private customRequestRepo?: IRequestRepository;
+  private customMechanicRepo?: IMechanicRepository;
 
   constructor(requestRepo?: IRequestRepository, mechanicRepo?: IMechanicRepository) {
-    this.requestRepo = requestRepo || getRequestRepository();
-    this.mechanicRepo = mechanicRepo || getMechanicRepository();
+    this.customRequestRepo = requestRepo;
+    this.customMechanicRepo = mechanicRepo;
+  }
+
+  private get requestRepo(): IRequestRepository {
+    return this.customRequestRepo || getRequestRepository();
+  }
+
+  private get mechanicRepo(): IMechanicRepository {
+    return this.customMechanicRepo || getMechanicRepository();
   }
 
   async getById(id: string): Promise<RoadsideRequest | null> {
@@ -316,9 +324,27 @@ export class RequestService {
     const req = await this.requestRepo.getById(requestId);
     if (!req) return null;
 
-    const mechanics = await this.mechanicRepo.listAll();
+    // Check for active dispatches across all requests to prevent assigning busy mechanics
+    const allRequests = await this.requestRepo.listAll();
+    const busyMechanicIds = new Set<string>();
+    for (const r of allRequests) {
+      const norm = normalizeRequestStatus(r.status);
+      if (
+        r.id !== requestId &&
+        r.assignedMechanicId &&
+        ["ACCEPTED", "ON_THE_WAY", "ARRIVED", "IN_SERVICE"].includes(norm)
+      ) {
+        busyMechanicIds.add(r.assignedMechanicId);
+      }
+    }
+
+    const allMechanics = await this.mechanicRepo.listAll();
+    const availableMechanics = allMechanics.filter(
+      (m) => !busyMechanicIds.has(m.mechanicId) && !busyMechanicIds.has(m.id)
+    );
+
     const matchInput = toMatchingRequestInput(req);
-    const matchResult = assignNearestMechanic(matchInput, mechanics);
+    const matchResult = assignNearestMechanic(matchInput, availableMechanics);
 
     if (!matchResult.success || !matchResult.selectedMechanic) {
       const failureEv = getTimelineEventForStatus("NO_MECHANIC_AVAILABLE", {

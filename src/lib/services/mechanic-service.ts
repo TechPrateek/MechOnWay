@@ -1,4 +1,4 @@
-﻿import {
+import {
   GeoPoint,
   Mechanic,
   MechanicStatus,
@@ -12,10 +12,14 @@ import {
 } from "../repositories";
 
 export class MechanicService {
-  private mechanicRepo: IMechanicRepository;
+  private customRepo?: IMechanicRepository;
 
   constructor(mechanicRepo?: IMechanicRepository) {
-    this.mechanicRepo = mechanicRepo || getMechanicRepository();
+    this.customRepo = mechanicRepo;
+  }
+
+  private get mechanicRepo(): IMechanicRepository {
+    return this.customRepo || getMechanicRepository();
   }
 
   async listMechanics(filters?: { onlineOnly?: boolean }): Promise<Mechanic[]> {
