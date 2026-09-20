@@ -1,196 +1,221 @@
 # 🚗 MechOnWay — On-Demand Intelligent Roadside Assistance
 
+[![Next.js 16](https://img.shields.io/badge/Next.js-16.3.5-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![React 19](https://img.shields.io/badge/React-19.2.8-blue?style=for-the-badge&logo=react)](https://react.dev/)
+[![AWS Amplify](https://img.shields.io/badge/AWS-Amplify_Hosting-FF9900?style=for-the-badge&logo=amazon-aws)](https://main.d1vqbdcnkkxe6z.amplifyapp.com)
+[![AWS Lambda](https://img.shields.io/badge/AWS-Lambda_Serverless-FF9900?style=for-the-badge&logo=aws-lambda)](https://aws.amazon.com/lambda/)
+[![Amazon DynamoDB](https://img.shields.io/badge/Amazon-DynamoDB-4053D6?style=for-the-badge&logo=amazon-dynamodb)](https://aws.amazon.com/dynamodb/)
+[![Tests Passing](https://img.shields.io/badge/Tests-108%20Passed-brightgreen?style=for-the-badge)](https://vitest.dev/)
+
 > **Built for the WeMakeDevs "First Commit" Hackathon — Bharat Builds Tour 2026**  
 > **Track:** Ship It (Live Cloud Deployment on AWS) & Best UI  
 > 🌐 **Live Web Application (AWS Amplify):** [https://main.d1vqbdcnkkxe6z.amplifyapp.com](https://main.d1vqbdcnkkxe6z.amplifyapp.com)  
 > ⚡ **Live Serverless API (AWS API Gateway):** [https://nijdxn0jjb.execute-api.ap-south-1.amazonaws.com](https://nijdxn0jjb.execute-api.ap-south-1.amazonaws.com)  
 > 📦 **GitHub Repository:** [https://github.com/TechPrateek/MechOnWay](https://github.com/TechPrateek/MechOnWay)  
+> 📍 **Primary Region:** AWS Asia Pacific Mumbai (`ap-south-1`)
 
 ---
 
 ## 🌟 Overview
 
-**MechOnWay** is an Uber/Linear-inspired, modern roadside assistance platform engineered to connect stranded vehicle owners with qualified, nearby mechanics in minutes. 
+**MechOnWay** is an Uber/Linear-inspired, modern roadside assistance platform engineered to connect stranded vehicle owners with qualified, nearby mobile mechanics in minutes.
 
-Breakdowns are stressful, unpredictable, and often dangerous. MechOnWay replaces traditional chaotic phone calls and opaque wait times with an intelligent matching engine that pairs drivers with available technicians based on **real-time geographic proximity (Haversine formula)**, **vehicle compatibility**, and **service capability**.
+Breakdowns are stressful, unpredictable, and dangerous. MechOnWay replaces traditional chaotic phone calls and opaque wait times with an intelligent matching engine that pairs drivers with available technicians based on **real-time geographic proximity (Haversine formula)**, **vehicle compatibility (Cars, EVs, Motorcycles, Trucks)**, and **service capability**.
+
+### 🇮🇳 Grounded in Bharat (Greater Noida & Delhi NCR Corridor)
+Tailored to high-traffic, critical expressway transit corridors in India:
+- **Pari Chowk, Greater Noida** (Commercial & Metro junction)
+- **Knowledge Park III, Greater Noida** (University & Institutional hub)
+- **Noida-Greater Noida Expressway — Sector 142** (High-speed expressway shoulder)
+- **Sector 62 Electronic City, Noida** (Dense urban commercial tech park)
+- **Yamuna Expressway Corridor — Zero Point** (Long-haul transit artery)
 
 ---
 
-## 🏗️ Architecture & AWS Stack ("Build It" Track)
+## 🏗️ Production AWS Architecture ("Ship It" Track)
 
-MechOnWay is built locally using an **open-source AWS serverless architecture** powered by **AWS SAM (Serverless Application Model)**. It runs with zero cloud bill, zero credit card requirement, and zero cloud lock-in while maintaining complete parity with production AWS Lambda and DynamoDB.
+MechOnWay is architected and fully deployed using **AWS Serverless and Managed Services**:
 
 ```mermaid
 flowchart TD
-    subgraph Client["Frontend Layer (Next.js 16 + React 19)"]
-        UI["Modern UI (Tailwind CSS + Lucide Icons)"]
+    subgraph Frontend["Frontend Layer (AWS Amplify Hosting)"]
+        UI["Next.js 16 + React 19 App (Tailwind CSS)"]
         Map["Leaflet + OpenStreetMap (Client-side)"]
-        State["Reactive State & Timeline Machine"]
+        Badge["Live AWS Telemetry Status Badge"]
     end
 
-    subgraph AWS_SAM["AWS SAM Local / Serverless API Layer"]
+    subgraph AWS_API["API Gateway Layer (ap-south-1)"]
         APIGW["Amazon API Gateway (HTTP APIs)"]
-        Lambda["AWS Lambda Function (Node.js 20.x + arm64)"]
-        Router["Serverless Dispatch Router"]
     end
 
-    subgraph Engine["Business Core & Algorithms"]
-        Validator["Zod Schema Validation"]
-        Matching["Haversine Proximity & Vehicle Filter Engine"]
+    subgraph Compute["Compute Layer (AWS Lambda)"]
+        Router["Serverless Dispatch Router (Node.js 20, ARM64)"]
+        Validator["Zod Schema Validation Layer"]
+        Engine["Haversine Proximity & Vehicle Match Engine"]
         FSM["Central Status Transition State Machine"]
     end
 
-    subgraph Storage["Storage Layer (Pluggable Repositories)"]
-        LocalRepo["Local Filesystem Store (Zero-Bill SAM Local)"]
-        DDBRepo["Amazon DynamoDB Tables (Production Mode)"]
+    subgraph Database["Database Layer (Amazon DynamoDB)"]
+        RequestsTable[("MechOnWay-Requests-prod Table")]
+        MechanicsTable[("MechOnWay-Mechanics-prod Table")]
     end
 
-    UI --> APIGW
-    APIGW --> Lambda
-    Lambda --> Router
+    UI -->|HTTPS /api/...| APIGW
+    APIGW --> Router
     Router --> Validator
     Validator --> Engine
-    Engine --> Storage
-    LocalRepo -.->|Toggle STORAGE_PROVIDER=dynamodb| DDBRepo
+    Engine --> FSM
+    FSM --> RequestsTable
+    Engine --> MechanicsTable
 ```
 
-### Key Technical Highlights
-- **AWS SAM Local Backend**: Built with Node.js 20 runtime, configured in [`template.yaml`](./template.yaml) with Amazon API Gateway and AWS Lambda handler ([`src/serverless/lambda-handler.ts`](./src/serverless/lambda-handler.ts)).
-- **Dual-Storage Provider Pattern**: Clean repository abstraction (`IRequestRepository`, `IMechanicRepository`) supporting:
-  - **Local Persistence Mode (`STORAGE_PROVIDER=local`)**: Resilient filesystem-backed JSON storage with mutex locking, atomic file operations, and automatic mock re-seeding. Compatible with Windows, macOS, Linux, and AWS SAM Docker containers (`/tmp/mechonway-data`).
-  - **Cloud Mode (`STORAGE_PROVIDER=dynamodb`)**: Managed Amazon DynamoDB persistence for production deployment (`MechOnWay-Requests` and `MechOnWay-Mechanics`).
-- **Real-Time Lifecycle State Machine**: Centralized finite state machine enforcing strict status transitions:
-  `SEARCHING` ➔ `MATCHED` ➔ `REQUESTED` ➔ `ACCEPTED` ➔ `ON_THE_WAY` ➔ `ARRIVED` ➔ `IN_SERVICE` ➔ `COMPLETED` / `CANCELLED`.
-- **Deterministic Mechanic Matching**: Evaluates technician availability, vehicle compatibility (EV, Motorcycle, Truck, Sedan), equipment specializations, and Haversine distance. Includes active dispatch collision prevention to avoid double-booking busy technicians.
+### AWS Services Utilized
+1. **AWS Amplify Hosting**: Continuous deployment, global CloudFront CDN edge distribution, and SSR support for Next.js 16.
+2. **Amazon API Gateway (HTTP API)**: Ultra-low latency, serverless REST API endpoints with CORS support and payload routing.
+3. **AWS Lambda**: Node.js 20 runtime on ARM64 Graviton architecture for efficient compute scaling and zero idle costs.
+4. **Amazon DynamoDB**: Fully managed NoSQL tables (`MechOnWay-Requests-prod` and `MechOnWay-Mechanics-prod`) with on-demand capacity.
+5. **AWS SAM (Serverless Application Model)**: Complete Infrastructure as Code defined in [`template.yaml`](./template.yaml).
 
 ---
 
-## 🚀 Quick Start (Local Development)
+## ⚡ Core Engineering Features
+
+### 1. Multi-Factor Proximity & Capability Matching Engine
+- **Haversine Distance & Realistic ETA**: Computes spherical distance between stranded driver coordinates and mobile mechanic units, calculating transit arrival times at 35 km/h urban/corridor transit speed.
+- **Vehicle & Tool Compatibility**: Matches specific vehicle constraints (EV auxiliary battery booster, heavy winching, motorcycle puncture kit, hydraulic floor jacks).
+- **75 km Regional Emergency Guard**: Rejects absurd cross-country matches with clear diagnostics if no verified unit is within 75 km.
+- **Active Collision Prevention**: Prevents double-booking mechanics who are already engaged on an active job (`ACCEPTED`, `ON_THE_WAY`, `ARRIVED`, `IN_SERVICE`).
+- **Stale Dispatch Auto-Recovery**: Dispatches older than 60 minutes automatically expire so demo mechanics are never permanently locked out.
+
+### 2. Central Lifecycle State Machine (FSM)
+Strictly enforces legal status transitions:
+```
+SEARCHING ➔ MATCHED ➔ REQUESTED ➔ ACCEPTED ➔ ON_THE_WAY ➔ ARRIVED ➔ IN_SERVICE ➔ COMPLETED
+    └────────────────── CANCELLED (Permitted from any non-terminal state) ────────────┘
+```
+- A completed request is immutable and cannot be cancelled.
+- A cancelled request cannot re-enter active queues.
+- Jumping states (e.g. `ON_THE_WAY` directly to `COMPLETED`) is strictly validated and rejected.
+
+### 3. Accessible UI & Zero Paid Map Dependencies
+- Uses **OpenStreetMap + Leaflet** dynamically loaded on the client side, requiring **$0 API keys** and preventing surprise billing.
+- Fallback list view if geolocation or map loading fails.
+- Complete high-contrast dark and light mode compatibility across all inputs, forms, and live radar animations.
+
+---
+
+## 👥 Two-Sided Platform Demo Flow
+
+To evaluate the complete end-to-end matching loop, open two browser tabs:
+
+### Tab 1: Customer Dispatch Flow
+1. Go to [https://main.d1vqbdcnkkxe6z.amplifyapp.com](https://main.d1vqbdcnkkxe6z.amplifyapp.com).
+2. Click **"Request Assistance"** or choose an issue on the landing page (e.g. *Flat Tyre* at *Pari Chowk, Greater Noida*).
+3. Select your vehicle type, describe the issue, and confirm your location.
+4. Click **"Find Nearest Available Mechanic"**.
+5. Watch the live **Matching Radar** scan nearby units and assign the optimal technician (e.g., **Rajesh Sharma** ~0.47 km away, ~6 min arrival).
+6. View the live tracking screen with real-time status timeline and interactive route map.
+
+### Tab 2: Mechanic Partner Portal
+1. Navigate to [https://main.d1vqbdcnkkxe6z.amplifyapp.com/mechanic](https://main.d1vqbdcnkkxe6z.amplifyapp.com/mechanic).
+2. View the technician dashboard with live GPS toggle, online/offline status, and incoming active dispatch.
+3. Advance request progress: **Mark Arrived** ➔ **Start Service** ➔ **Complete Job** with diagnostic inspection notes.
+4. Watch the customer screen update in real time!
+
+---
+
+## 📡 Live API Reference
+
+**Base URL**: `https://nijdxn0jjb.execute-api.ap-south-1.amazonaws.com`
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/` | API health check, status, and endpoint discovery |
+| `GET` | `/api/mechanics` | Lists registered mobile technicians and availability status |
+| `GET` | `/api/requests` | Lists all roadside assistance requests from DynamoDB |
+| `POST` | `/api/requests` | Creates a new roadside assistance request with full 9-point payload |
+| `GET` | `/api/requests/:id` | Retrieves single request details by ID |
+| `POST` | `/api/requests/match` | Runs the serverless matching engine to pair request with nearest mechanic |
+| `PATCH` | `/api/requests/:id` | Updates request lifecycle status (`ARRIVED`, `IN_SERVICE`, `COMPLETED`, etc.) |
+| `POST` | `/api/mechanics/reseed` | Administrative endpoint to reseed Delhi NCR demo technicians into DynamoDB |
+
+---
+
+## 🧪 Testing & Quality Assurance
+
+MechOnWay is built with strict quality controls and 100% test pass rates:
+
+```bash
+# Run Vitest test suite
+npm test
+
+# Run ESLint (0 errors, 0 warnings)
+npm run lint
+
+# Run Next.js 16 Turbopack production build
+npm run build
+```
+
+### Test Suite Summary:
+```
+ Test Files  9 passed (9)
+      Tests  108 passed (108)
+   Duration  1.4s
+```
+- `src/lib/api/__tests__/client.test.ts`: API Gateway client payload integrity, URL resolution, and status methods.
+- `src/lib/matching/__tests__/engine.test.ts`: Haversine formula accuracy, tie-breaking, vehicle compatibility filtering, and phone masking.
+- `src/lib/lifecycle/__tests__/status-machine.test.ts`: Strict state transition rules, illegal state jump rejections, terminal immutability.
+- `src/lib/validations/__tests__/request-validation.test.ts`: Zod schema bounds, GPS coordinate constraints, and phone number validation.
+- `src/lib/services/__tests__/request-service.test.ts`: Request creation, pricing calculation, and auto-matching service flow.
+- `src/serverless/__tests__/lambda-handler.test.ts`: Complete multi-step HTTP request lifecycle across separate Lambda invocations.
+
+---
+
+## 🚀 Local Development
 
 ### 1. Prerequisites
 - **Node.js 20+**
 - **npm**
-- *(Optional for SAM Local)* **AWS SAM CLI** & **Docker**
+- *(Optional for SAM local)* **AWS SAM CLI** & **Docker**
 
-### 2. Installation
+### 2. Setup
 ```bash
-# Clone repository
+# Clone the repository
 git clone https://github.com/TechPrateek/MechOnWay.git
 cd MechOnWay
 
 # Install dependencies
 npm install
-```
 
-### 3. Run Frontend & Local API
-```bash
+# Run local development server
 npm run dev
 ```
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## ☁️ Deploying Live to AWS ("Ship It" Track)
+## ☁️ Deploying to Your Own AWS Account
 
-MechOnWay deploys to AWS as a production serverless cloud application:
-
-### 1. Deploy the Serverless Backend (AWS SAM)
+### 1. Deploy the Backend with AWS SAM
 ```bash
 # Build Lambda artifacts
 sam build --region ap-south-1
 
-# Deploy to AWS (interactive wizard)
+# Deploy to AWS CloudFormation
 sam deploy --guided
 ```
-- **Stack Name**: `mechonway-backend`
-- **AWS Region**: `ap-south-1` (or your preferred region)
-- **Parameter Environment**: `prod`
-- **Parameter StorageProvider**: `dynamodb`
-- SAM automatically provisions:
-  - `MechOnWayHttpApi` (HTTP API Gateway)
-  - `MechOnWay-Requests-prod` (Amazon DynamoDB Table)
-  - `MechOnWay-Mechanics-prod` (Amazon DynamoDB Table)
-  - `mechonway-backend-prod` (AWS Lambda on ARM64 Graviton)
-- Save the output `ApiEndpoint` (e.g. `https://xxxx.execute-api.ap-south-1.amazonaws.com`).
 
-### 2. Deploy Frontend on AWS Amplify Hosting
-1. Go to the [AWS Amplify Console](https://console.aws.amazon.com/amplify).
-2. Choose **Host web app** and connect your GitHub repository (`TechPrateek/MechOnWay`).
-3. Amplify detects [`amplify.yml`](./amplify.yml) automatically.
-4. Under **Environment variables**, set:
+### 2. Deploy the Frontend with AWS Amplify
+1. Open the [AWS Amplify Console](https://console.aws.amazon.com/amplify).
+2. Connect your GitHub repository (`TechPrateek/MechOnWay`).
+3. Amplify auto-detects [`amplify.yml`](./amplify.yml).
+4. In **Environment variables**, add:
    - `NEXT_PUBLIC_API_BASE_URL`: `https://[your-api-id].execute-api.ap-south-1.amazonaws.com`
-5. Click **Save and Deploy**. Your live URL will be ready at `https://main.xxxxxx.amplifyapp.com`!
+5. Click **Save and Deploy**.
 
 ---
 
-## ⚡ Running with AWS SAM Local (Local Testing)
+## 📜 License
 
-You can run the backend serverless API entirely locally using AWS SAM CLI without an AWS account:
-
-```bash
-# 1. Validate the SAM Template
-sam validate --region ap-south-1
-
-# 2. Build the Serverless Lambda Artifacts with esbuild
-sam build --region ap-south-1
-
-# 3. Start the Local API Gateway on port 3001
-sam local start-api --port 3001
-```
-
-Once running, the API Gateway endpoints are live at `http://127.0.0.1:3001/api/...`.
-
----
-
-## 🧪 Testing & Quality Assurance
-
-MechOnWay is built with 100% test pass rates and strict linting standards:
-
-```bash
-# Run all unit and integration tests (Vitest)
-npm test
-
-# Run ESLint (0 errors, 0 warnings)
-npm run lint
-
-# Verify Production Build (Next.js 16 Turbopack)
-npm run build
-```
-
-### Test Coverage Highlights
-- **104 tests passed across 9 suites**:
-  - `src/lib/matching/__tests__/engine.test.ts`: Haversine formula, multi-attribute ranking, tie-breaking, phone masking.
-  - `src/lib/lifecycle/__tests__/status-machine.test.ts`: FSM state transitions, terminal state immutability, role permissions.
-  - `src/lib/validations/__tests__/request-validation.test.ts`: Zod schema bounds, GPS coordinate limits, phone validation.
-  - `src/lib/repositories/__tests__/local-repository.test.ts`: Concurrent writes, atomic renames, corruption recovery.
-  - `src/serverless/__tests__/lambda-handler.test.ts`: End-to-end multi-step HTTP request lifecycle across separate Lambda invocations.
-
----
-
-## 📡 API Reference
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `/api/requests` | Creates a new roadside assistance request |
-| `GET` | `/api/requests` | Lists all roadside assistance requests |
-| `GET` | `/api/requests/:id` | Retrieves request details by ID |
-| `POST` | `/api/requests/match` | Runs the matching engine to pair request with the nearest mechanic |
-| `PATCH` | `/api/requests/:id` | Updates request status (`ARRIVED`, `IN_SERVICE`, `COMPLETED`, etc.) |
-| `GET` | `/api/mechanics` | Lists registered mechanics with status and availability |
-
----
-
-## 👥 Demo Flow
-
-1. **Customer Dashboard**: Stranded driver visits the homepage, clicks **"Request Assistance"**, selects vehicle type (e.g. Car, EV, Motorcycle), and specifies issue (Flat Tyre, Battery Jump, Engine Stalling).
-2. **Location Picker**: Uses browser geolocation or selects one of the pre-loaded San Francisco demo hotspots.
-3. **Instant Matching Engine**: System calculates nearest eligible mechanics, displays ranking rationale, and assigns the technician.
-4. **Live Request Tracking**: Real-time status timeline and interactive OpenStreetMap route visualization.
-5. **Mechanic Dashboard**: Mechanics can toggle availability, view incoming requests, accept jobs, and update roadside progress in real time.
-
----
-
-## 📜 License & Acknowledgments
-
-- Built with ❤️ for **WeMakeDevs First Commit (Bharat Builds Tour 2026)**.
-- Licensed under the **MIT License**.
+Built with ❤️ for **WeMakeDevs "First Commit" Hackathon (Bharat Builds Tour 2026)**.  
+Licensed under the **MIT License**.
