@@ -127,7 +127,7 @@ function RequestFlowContent() {
   });
   const [description, setDescription] = useState<string>("");
   const [customerName, setCustomerName] = useState<string>("Alex Mercer");
-  const [phoneNumber, setPhoneNumber] = useState<string>("+1 (555) 301-4491");
+  const [phoneNumber, setPhoneNumber] = useState<string>("+91 98110 54321");
 
   // Location state
   const [locationAddress, setLocationAddress] = useState<string>(() => {
@@ -777,7 +777,7 @@ function RequestFlowContent() {
                         setErrors({ ...errors, customerPhone: "" });
                       }
                     }}
-                    placeholder="+1 (555) 000-0000"
+                    placeholder="+91 98765 43210"
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-colors"
                   />
                 </div>

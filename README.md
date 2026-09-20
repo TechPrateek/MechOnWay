@@ -18,17 +18,23 @@
 
 ## 🌟 Overview
 
-**MechOnWay** is an Uber/Linear-inspired, modern roadside assistance platform engineered to connect stranded vehicle owners with qualified, nearby mobile mechanics in minutes.
+**MechOnWay** is an Uber/Linear-inspired, modern roadside assistance platform engineered to connect stranded vehicle owners with qualified, nearby mobile mechanics in minutes across India.
 
-Breakdowns are stressful, unpredictable, and dangerous. MechOnWay replaces traditional chaotic phone calls and opaque wait times with an intelligent matching engine that pairs drivers with available technicians based on **real-time geographic proximity (Haversine formula)**, **vehicle compatibility (Cars, EVs, Motorcycles, Trucks)**, and **service capability**.
+Breakdowns are stressful, unpredictable, and dangerous. MechOnWay replaces traditional chaotic phone calls, long hold times, and opaque towing surcharges with an intelligent, serverless matching engine that pairs drivers with available technicians based on **real-time geographic proximity (Haversine formula)**, **vehicle compatibility (Cars, EVs, Motorcycles, Trucks)**, and **service capability**.
 
-### 🇮🇳 Grounded in Bharat (Greater Noida & Delhi NCR Corridor)
-Tailored to high-traffic, critical expressway transit corridors in India:
-- **Pari Chowk, Greater Noida** (Commercial & Metro junction)
-- **Knowledge Park III, Greater Noida** (University & Institutional hub)
-- **Noida-Greater Noida Expressway — Sector 142** (High-speed expressway shoulder)
-- **Sector 62 Electronic City, Noida** (Dense urban commercial tech park)
-- **Yamuna Expressway Corridor — Zero Point** (Long-haul transit artery)
+### 🇮🇳 Pan-India National Roadside Network (All Over Bharat)
+MechOnWay is architected from the ground up as an **all-India roadside assistance and highway dispatch ecosystem** designed to support motorists and transport fleets anywhere in the country:
+- **National Highway & Expressway Coverage**: Engineered to serve India's vast arterial corridors including the **Golden Quadrilateral**, **NH-44**, **NH-48**, and access-controlled expressways (**Yamuna Expressway**, **Mumbai-Pune Expressway**, **Samruddhi Mahamarg**, **Purvanchal Expressway**, **Bangalore-Mysore Highway**, and **Delhi-Mumbai Expressway**).
+- **Metro, Tier-2 & Tier-3 City Readiness**: Geospatially calibrated for both dense metropolitan traffic (Delhi NCR, Mumbai, Bengaluru, Hyderabad, Chennai, Kolkata, Pune) and underserved transit towns where organized mobile mechanics are historically scarce.
+- **Dynamic Multi-Region Geo-Matching**: Employs spherical coordinate projection, flexible corridor geofencing, and variable emergency radius limits that adapt seamlessly across any Indian state or union territory.
+
+### 📍 Active Pilot Corridor (Greater Noida & Delhi NCR Demonstration)
+To provide an authentic, live end-to-end evaluation for the **WeMakeDevs Hackathon**, the Greater Noida & Delhi NCR highway cluster is actively seeded as our **live pilot launch zone**:
+- **Pari Chowk, Greater Noida** (High-traffic commercial & metro confluence)
+- **Knowledge Park III, Greater Noida** (University & institutional educational belt)
+- **Noida-Greater Noida Expressway — Sector 142** (High-speed expressway corridor near Advant)
+- **Sector 62 Electronic City, Noida** (Major IT & corporate tech park hub)
+- **Yamuna Expressway Corridor — Zero Point** (Gateway to long-distance Agra/Lucknow transit)
 
 ---
 
@@ -137,7 +143,7 @@ To evaluate the complete end-to-end matching loop, open two browser tabs:
 | `GET` | `/api/requests/:id` | Retrieves single request details by ID |
 | `POST` | `/api/requests/match` | Runs the serverless matching engine to pair request with nearest mechanic |
 | `PATCH` | `/api/requests/:id` | Updates request lifecycle status (`ARRIVED`, `IN_SERVICE`, `COMPLETED`, etc.) |
-| `POST` | `/api/mechanics/reseed` | Administrative endpoint to reseed Delhi NCR demo technicians into DynamoDB |
+| `POST` | `/api/mechanics/reseed` | Administrative endpoint to reseed pilot corridor demo technicians into DynamoDB |
 
 ---
 

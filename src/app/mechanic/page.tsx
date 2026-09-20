@@ -400,7 +400,7 @@ export default function MechanicDashboardPage() {
                 Rig: <strong>{mechanic.vehicleRig}</strong> • Plate: <strong className="font-mono">{mechanic.licensePlate}</strong>
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Contact: <strong className="font-mono">{mechanic.phone}</strong> • Station: <strong>San Francisco, CA</strong>
+                Contact: <strong className="font-mono">{mechanic.phone}</strong> • Station: <strong>{mechanic.currentLocation?.address || "Delhi NCR / Pan-India Network"}</strong>
               </p>
             </div>
           </div>

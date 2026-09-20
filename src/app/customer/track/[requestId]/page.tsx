@@ -188,15 +188,15 @@ export default function RequestTrackingPage() {
   const assignedTech = request.assignedMechanic || null;
 
   const mechanic = assignedTech || {
-    name: "Elena Rostova",
-    phone: "+1 (555) 489-3321",
+    name: "Rajesh Sharma",
+    phone: "+91 98101 23456",
     avatarUrl:
-      "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80",
-    rating: 4.98,
-    completedJobsCount: 1120,
-    vehicleRig: "Chevrolet Silverado EV Rapid Response Unit",
-    licensePlate: "EV-9904",
-    certifications: ["Automotive Electrical (Demo)", "Roadside Safety Protocol"],
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    rating: 4.95,
+    completedJobsCount: 842,
+    vehicleRig: "Mahindra Bolero Camper Mobile Workshop",
+    licensePlate: "UP 16 AB 8921",
+    certifications: ["Automotive Electrical & Diagnostic", "Roadside Safety Protocol"],
     latitude: request.location.coordinates.lat + 0.018,
     longitude: request.location.coordinates.lng - 0.015,
   };

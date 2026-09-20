@@ -48,9 +48,9 @@ export function Navbar() {
             {/* Region Live Telemetry */}
             <div className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800/60 text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span className="font-medium">SF Metro Area</span>
+              <span className="font-medium">Pan-India Network</span>
               <span className="text-slate-300 dark:text-slate-600">•</span>
-              <span className="text-slate-500 dark:text-slate-400">184 Verified Units</span>
+              <span className="text-slate-500 dark:text-slate-400">180+ Verified Units</span>
             </div>
           </div>
 
@@ -148,9 +148,9 @@ export function Navbar() {
           <div className="py-2 px-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs flex items-center justify-between text-slate-600 dark:text-slate-300 mb-3">
             <span className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              SF Bay Area Network
+              Pan-India Network
             </span>
-            <span className="font-semibold text-slate-900 dark:text-white">184 Online</span>
+            <span className="font-semibold text-slate-900 dark:text-white">180+ Online</span>
           </div>
 
           <Link

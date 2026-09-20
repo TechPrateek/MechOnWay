@@ -108,14 +108,14 @@ export function Footer() {
               Stranded in a low-connectivity area? Call dispatch directly:
             </p>
             <a
-              href="tel:+18005556324"
+              href="tel:18001236324"
               className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-white font-mono text-sm hover:border-amber-500/50 transition-colors"
             >
               <Phone className="w-4 h-4 text-amber-400" />
-              1-800-555-MECH
+              1800-123-MECH
             </a>
             <p className="text-[11px] text-slate-500">
-              Operating continuously across the SF Bay Area metropolitan corridor.
+              Operating 24/7 across National Highways, Expressways, and metropolitan hubs across India.
             </p>
           </div>
         </div>

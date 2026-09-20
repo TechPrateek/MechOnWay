@@ -121,7 +121,7 @@ export default function CustomerDashboardPage() {
             </span>
           </div>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-            Alex Mercer • +1 (555) 301-4491 • Default Location: San Francisco, CA
+            Alex Mercer • +91 98110 54321 • Default Region: Delhi NCR / Pan-India Corridor
           </p>
         </div>
 
