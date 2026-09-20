@@ -1,4 +1,5 @@
 import { requestService, mechanicService } from "../lib/services";
+import { getMechanicRepository, getRequestRepository } from "../lib/repositories";
 import { createRequestSchema, updateRequestStatusSchema } from "../lib/validations/request";
 import { z } from "zod";
 
@@ -208,6 +209,40 @@ export async function handler(event: LambdaHttpEvent): Promise<LambdaHttpRespons
           validated.data.isOnline
         );
         return jsonResponse(200, { success: true, data: updated });
+      }
+    }
+
+    // Route: /api/mechanics/reseed
+    if (path.endsWith("/api/mechanics/reseed") || path.endsWith("/mechanics/reseed")) {
+      if (method === "POST") {
+        const repo = getMechanicRepository();
+        if (typeof repo.reset === "function") {
+          await repo.reset();
+        }
+        const updated = await repo.listAll();
+        return jsonResponse(200, {
+          success: true,
+          message: `Successfully re-seeded ${updated.length} demo mechanics`,
+          count: updated.length,
+          data: updated,
+        });
+      }
+    }
+
+    // Route: /api/requests/reseed
+    if (path.endsWith("/api/requests/reseed") || path.endsWith("/requests/reseed")) {
+      if (method === "POST") {
+        const repo = getRequestRepository();
+        if (typeof repo.reset === "function") {
+          await repo.reset();
+        }
+        const updated = await repo.listAll();
+        return jsonResponse(200, {
+          success: true,
+          message: `Successfully re-seeded ${updated.length} demo requests`,
+          count: updated.length,
+          data: updated,
+        });
       }
     }
 

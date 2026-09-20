@@ -79,6 +79,38 @@ describe("API Client (Frontend -> Cloud Bridge)", () => {
       expect(result).toEqual(created);
     });
 
+    it("creates a request with complete payload including customerId and serviceType", async () => {
+      const payload: CreateRequestInput = {
+        customerId: "cust-9988",
+        customerName: "Prateek Yadav",
+        customerPhone: "+919876543210",
+        vehicle: { type: "car", make: "Maruti", model: "Swift", year: 2022 },
+        serviceType: "flat_tyre",
+        breakdownCategory: "flat_tyre",
+        issueDescription: "Flat tyre near Pari Chowk",
+        urgency: "standard",
+        location: {
+          address: "Pari Chowk, Greater Noida",
+          coordinates: { lat: 28.4744, lng: 77.5040 },
+        },
+      };
+
+      const created = { id: "req-aws-12345", ...payload, status: "SEARCHING" };
+
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: created }),
+      } as Response);
+
+      const result = await apiClient.requests.create(payload);
+      expect(result.id).toBe("req-aws-12345");
+      expect(fetchSpy).toHaveBeenCalledWith("https://api.mechonway.com/api/requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    });
+
     it("executes matching engine dispatch via POST /api/requests/match", async () => {
       const matchResponse = {
         success: true,

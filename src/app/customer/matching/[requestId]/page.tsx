@@ -12,9 +12,8 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/common/button";
-import { requestStore } from "@/lib/data/store";
-import { useRequests } from "@/lib/data/use-store";
-import { Mechanic } from "@/types";
+import { apiClient } from "@/lib/api/client";
+import { Mechanic, RoadsideRequest } from "@/types";
 import { formatCurrency } from "@/lib/utils";
 import { maskPhoneNumber } from "@/lib/matching/engine";
 
@@ -23,80 +22,111 @@ export default function FindingMechanicPage() {
   const router = useRouter();
   const requestId = params?.requestId;
 
-  const requests = useRequests();
-  const request = requests.find((r) => r.id === requestId) || null;
-
-  const [matchedMechanic, setMatchedMechanic] = useState<Mechanic | null>(() => {
-    if (!requestId) return null;
-    const existing = requestStore.getById(requestId);
-    return existing?.assignedMechanic ?? null;
-  });
-
-  const [matchExplanation, setMatchExplanation] = useState<string | null>(() => {
-    if (!requestId) return null;
-    const existing = requestStore.getById(requestId);
-    return existing?.matchingExplanation ?? null;
-  });
-
+  const [request, setRequest] = useState<RoadsideRequest | null>(null);
+  const [loadingRequest, setLoadingRequest] = useState<boolean>(() => Boolean(requestId));
+  const [matchedMechanic, setMatchedMechanic] = useState<Mechanic | null>(null);
+  const [matchExplanation, setMatchExplanation] = useState<string | null>(null);
   const [failureReason, setFailureReason] = useState<string | null>(null);
-
-  const [matchingStep, setMatchingStep] = useState<number>(() => {
-    if (!requestId) return 1;
-    const existing = requestStore.getById(requestId);
-    return existing?.assignedMechanic ? 4 : 1;
-  });
-
-  const [isCompleted, setIsCompleted] = useState<boolean>(() => {
-    if (!requestId) return false;
-    const existing = requestStore.getById(requestId);
-    return !!existing?.assignedMechanic;
-  });
-
+  const [matchingStep, setMatchingStep] = useState<number>(1);
+  const [isCompleted, setIsCompleted] = useState<boolean>(false);
   const [retryCount, setRetryCount] = useState(0);
 
-  const hasAssigned = Boolean(request?.assignedMechanic);
-
+  // 1. Fetch live request from AWS API
   useEffect(() => {
-    if (!requestId || !request || hasAssigned) {
+    if (!requestId) {
       return;
     }
 
+    let mounted = true;
+    async function load() {
+      try {
+        const data = await apiClient.requests.get(requestId);
+        if (mounted) {
+          setRequest(data);
+          if (data?.assignedMechanic) {
+            setMatchedMechanic(data.assignedMechanic);
+            setMatchExplanation(data.matchingExplanation || "Assigned nearest available certified technician.");
+            setMatchingStep(4);
+            setIsCompleted(true);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load request from AWS API:", err);
+      } finally {
+        if (mounted) {
+          setLoadingRequest(false);
+        }
+      }
+    }
+
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, [requestId, retryCount]);
+
+  // 2. Perform live matching via AWS API: POST /api/requests/match
+  useEffect(() => {
+    if (!requestId || loadingRequest || !request || matchedMechanic || isCompleted) {
+      return;
+    }
+
+    let active = true;
+
     const t1 = setTimeout(() => {
-      setMatchingStep(2);
+      if (active) setMatchingStep(2);
     }, 1200);
 
     const t2 = setTimeout(() => {
-      setMatchingStep(3);
+      if (active) setMatchingStep(3);
     }, 2400);
 
-    const t3 = setTimeout(() => {
-      const result = requestStore.matchAndAssign(requestId);
-      if (result) {
-        if (result.matchResult.success && result.mechanic) {
+    const t3 = setTimeout(async () => {
+      try {
+        const result = await apiClient.requests.match(requestId);
+        if (!active) return;
+
+        if (result && result.mechanic) {
           setMatchedMechanic(result.mechanic);
-          setMatchExplanation(result.matchResult.explanation);
+          setMatchExplanation(result.explanation || "Matched closest certified mobile mechanic");
+          if (result.request) {
+            setRequest(result.request);
+          }
         } else {
           setMatchedMechanic(null);
-          setFailureReason(result.matchResult.explanation);
+          setFailureReason(
+            result?.error ||
+            result?.failureReason ||
+            "No available mechanics found within coverage radius at this moment."
+          );
+        }
+      } catch (err: unknown) {
+        if (!active) return;
+        console.error("Matching error on AWS API:", err);
+        const msg = err instanceof Error ? err.message : "Matching failed";
+        setMatchedMechanic(null);
+        setFailureReason(msg);
+      } finally {
+        if (active) {
+          setMatchingStep(4);
+          setIsCompleted(true);
         }
       }
-      setMatchingStep(4);
-      setIsCompleted(true);
     }, 3800);
 
     return () => {
+      active = false;
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
     };
-  }, [requestId, retryCount, hasAssigned, request]);
-
-  const isNotFound = !requestId || (!request && requests.length > 0);
+  }, [requestId, loadingRequest, request, matchedMechanic, isCompleted, retryCount]);
 
   const handleRetry = () => {
     setMatchingStep(1);
     setIsCompleted(false);
     setFailureReason(null);
+    setMatchedMechanic(null);
     setRetryCount((prev) => prev + 1);
   };
 
@@ -106,7 +136,7 @@ export default function FindingMechanicPage() {
     }
   };
 
-  if (isNotFound) {
+  if (!loadingRequest && (!requestId || !request)) {
     return (
       <div className="max-w-xl mx-auto px-4 py-16 text-center space-y-4">
         <div className="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center mx-auto">
@@ -116,7 +146,7 @@ export default function FindingMechanicPage() {
           Roadside Request Not Found
         </h2>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          We could not locate request ID <span className="font-mono font-semibold">{requestId}</span>. It may have expired or was submitted in a different browser session.
+          We could not locate request ID <span className="font-mono font-semibold">{requestId}</span> on the server.
         </p>
         <div className="pt-2 flex justify-center gap-3">
           <Button onClick={() => router.push("/customer/request")} variant="emergency">

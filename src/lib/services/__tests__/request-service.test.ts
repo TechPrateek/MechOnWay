@@ -222,7 +222,7 @@ describe("RequestService Domain Service", () => {
         vehicle: { type: "car", make: "Honda", model: "Accord" },
         issueDescription: "Clicking sound, no start",
         urgency: "standard",
-        location: { address: "Mission Bay", coordinates: { lat: 37.77, lng: -122.39 } },
+        location: { address: "Pari Chowk, Greater Noida", coordinates: { lat: 28.4744, lng: 77.5040 } },
       });
 
       const result = await service.matchAndAssign(req.id);

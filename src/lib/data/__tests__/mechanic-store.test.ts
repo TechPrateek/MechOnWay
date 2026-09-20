@@ -156,10 +156,10 @@ describe("Mechanic Store & Dispatch Rules", () => {
         issueDescription: "Battery clicking loudly, won't start",
         urgency: "standard",
         location: {
-          address: "500 Howard St, San Francisco, CA",
+          address: "Commercial Belt Alpha 1, Greater Noida, UP",
           coordinates: {
-            lat: 37.789,
-            lng: -122.399,
+            lat: 28.4744,
+            lng: 77.5040,
           },
         },
       });

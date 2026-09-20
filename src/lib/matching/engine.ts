@@ -110,7 +110,7 @@ export function estimateArrivalTimeMinutes(
   baseResponseTime: number,
   distanceKm: number
 ): number {
-  const averageSpeedKmH = 40;
+  const averageSpeedKmH = 35;
   const transitMinutes = (distanceKm / averageSpeedKmH) * 60;
   // Minimum 3 minutes, rounded to nearest minute
   return Math.max(3, Math.round(baseResponseTime + transitMinutes));
@@ -198,7 +198,8 @@ export function maskPhoneNumber(phone: string): string {
  */
 export function assignNearestMechanic(
   request: MatchingRequestInput,
-  mechanics: Mechanic[]
+  mechanics: Mechanic[],
+  options?: { maxRadiusKm?: number }
 ): MatchResult {
   // Validate request coordinates
   if (!isValidCoordinate(request.latitude, request.longitude)) {
@@ -286,6 +287,17 @@ export function assignNearestMechanic(
   }
 
   const bestMatch = ranked[0];
+  const maxRadiusKm = options?.maxRadiusKm ?? 75;
+
+  if (bestMatch.distanceKm > maxRadiusKm) {
+    return {
+      success: false,
+      eligibleCount: 0,
+      failureReason: "no_available",
+      explanation: `No available mechanics found within the active service area (${bestMatch.distanceKm} km away; maximum dispatch radius is ${maxRadiusKm} km). Please contact customer dispatch support.`,
+    };
+  }
+
   const serviceName = String(request.issueCategory).replace(/_/g, " ");
 
   const explanation = `Matched ${bestMatch.mechanic.name} (${bestMatch.mechanic.vehicleRig}), located ${bestMatch.distanceKm} km away. Fully equipped for ${serviceName} on your ${request.vehicleType} with a ${bestMatch.mechanic.rating}★ rating.`;

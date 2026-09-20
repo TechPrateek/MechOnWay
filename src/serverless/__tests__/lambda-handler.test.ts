@@ -50,12 +50,12 @@ describe("Serverless Lambda Handler (SAM Local Flow)", () => {
         year: 2022,
       },
       location: {
-        address: "City Center",
+        address: "Pari Chowk, Greater Noida",
         coordinates: {
-          lat: 37.7749,
-          lng: -122.4194,
+          lat: 28.4744,
+          lng: 77.5040,
         },
-        landmark: "Main Road",
+        landmark: "Metro Station Pillar 42",
       },
     };
 
@@ -119,7 +119,9 @@ describe("Serverless Lambda Handler (SAM Local Flow)", () => {
     expect(matchBody.data.request.id).toBe(createdId);
     expect(matchBody.data.request.status).toBe("ON_THE_WAY");
     expect(matchBody.data.mechanic).toBeDefined();
-    expect(matchBody.data.distanceKm).toBeGreaterThanOrEqual(0);
+    expect(matchBody.data.mechanic.name).toBe("Rajesh Sharma");
+    expect(matchBody.data.distanceKm).toBeLessThan(1.0); // ~0.47 km
+    expect(matchBody.data.estimatedArrivalMinutes).toBeLessThan(10); // ~6 mins
 
     // ----------------------------------------------------
     // Step 5: PATCH /api/requests/{createdId} (mark arrived)
@@ -151,5 +153,31 @@ describe("Serverless Lambda Handler (SAM Local Flow)", () => {
     expect(verifyBody.success).toBe(true);
     expect(verifyBody.data.status).toBe("ARRIVED");
     expect(verifyBody.data.timeline.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it("supports administrative reseeding via POST /api/mechanics/reseed", async () => {
+    const reseedResponse = await handler({
+      httpMethod: "POST",
+      rawPath: "/api/mechanics/reseed",
+    });
+
+    expect(reseedResponse.statusCode).toBe(200);
+    const body = JSON.parse(reseedResponse.body);
+    expect(body.success).toBe(true);
+    expect(body.count).toBeGreaterThanOrEqual(5);
+
+    // Verify GET /api/mechanics returns the reseeded Delhi NCR mechanics
+    const getResponse = await handler({
+      httpMethod: "GET",
+      rawPath: "/api/mechanics",
+    });
+
+    expect(getResponse.statusCode).toBe(200);
+    const getBody = JSON.parse(getResponse.body);
+    expect(getBody.success).toBe(true);
+    const rajesh = getBody.data.find((m: { id: string }) => m.id === "mech-001");
+    expect(rajesh).toBeDefined();
+    expect(rajesh.name).toBe("Rajesh Sharma");
+    expect(rajesh.currentLocation.address).toContain("Greater Noida");
   });
 });

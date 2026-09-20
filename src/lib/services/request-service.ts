@@ -76,7 +76,7 @@ export class RequestService {
     const now = new Date().toISOString();
     const newReq: RoadsideRequest = {
       id,
-      customerId: "cust-current",
+      customerId: input.customerId || "cust-current",
       customerName: input.customerName,
       customerPhone: input.customerPhone,
       vehicle: {
@@ -327,14 +327,23 @@ export class RequestService {
     // Check for active dispatches across all requests to prevent assigning busy mechanics
     const allRequests = await this.requestRepo.listAll();
     const busyMechanicIds = new Set<string>();
+    const nowMs = Date.now();
+    const STALE_DISPATCH_THRESHOLD_MS = 60 * 60 * 1000; // 60 minutes
+
     for (const r of allRequests) {
       const norm = normalizeRequestStatus(r.status);
-      if (
+      const isAssignedActive =
         r.id !== requestId &&
         r.assignedMechanicId &&
-        ["ACCEPTED", "ON_THE_WAY", "ARRIVED", "IN_SERVICE"].includes(norm)
-      ) {
-        busyMechanicIds.add(r.assignedMechanicId);
+        ["ACCEPTED", "ON_THE_WAY", "ARRIVED", "IN_SERVICE"].includes(norm);
+
+      if (isAssignedActive) {
+        // Dispatches older than 60 minutes are considered expired so demo mechanics are not locked indefinitely
+        const reqTime = r.updatedAt ? new Date(r.updatedAt).getTime() : new Date(r.createdAt).getTime();
+        const isStale = nowMs - reqTime > STALE_DISPATCH_THRESHOLD_MS;
+        if (!isStale) {
+          busyMechanicIds.add(r.assignedMechanicId!);
+        }
       }
     }
 

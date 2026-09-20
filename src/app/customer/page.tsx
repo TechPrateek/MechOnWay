@@ -22,8 +22,8 @@ import {
 import { Button } from "@/components/common/button";
 import { StatusIndicator } from "@/components/common/status-indicator";
 import { MOCK_SAVED_VEHICLES, BREAKDOWN_CATEGORIES_META } from "@/lib/data/mock-data";
-import { useRequests } from "@/lib/data/use-store";
-import { BreakdownCategory } from "@/types";
+import { apiClient } from "@/lib/api/client";
+import { BreakdownCategory, RoadsideRequest } from "@/types";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { normalizeRequestStatus } from "@/lib/lifecycle/status-machine";
 
@@ -39,7 +39,27 @@ const QUICK_CATEGORIES: { type: BreakdownCategory; label: string; icon: React.El
 ];
 
 export default function CustomerDashboardPage() {
-  const requests = useRequests();
+  const [requests, setRequests] = React.useState<RoadsideRequest[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    let mounted = true;
+    apiClient.requests.list()
+      .then((data) => {
+        if (mounted && Array.isArray(data)) {
+          setRequests(data);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load requests from AWS API:", err);
+      })
+      .finally(() => {
+        if (mounted) setIsLoading(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const activeRequest = requests.find((r) => {
     const s = normalizeRequestStatus(r.status);
@@ -118,7 +138,12 @@ export default function CustomerDashboardPage() {
       </div>
 
       {/* ACTIVE REQUEST CARD */}
-      {activeRequest ? (
+      {isLoading ? (
+        <div className="p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-500 animate-pulse flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+          Syncing active dispatch telemetry with AWS API...
+        </div>
+      ) : activeRequest ? (
         <div className="rounded-2xl border-2 border-amber-500 bg-amber-50/40 dark:bg-amber-950/20 p-6 shadow-md space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">

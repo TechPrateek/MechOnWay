@@ -573,7 +573,7 @@ export default function MechanicRequestDetailsPage() {
               value={diagnosticText}
               onChange={(e) => setDiagnosticText(e.target.value)}
               placeholder="e.g. Scanned OBD codes: P0300 resolved. Lug nuts torqued to OEM specification (129 lb-ft). Battery state of health tested at 82%."
-              className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-mono"
+              className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-mono transition-colors"
             />
 
             <div className="flex justify-end">

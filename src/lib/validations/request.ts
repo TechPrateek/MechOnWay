@@ -64,6 +64,7 @@ export const serviceLocationSchema = z.object({
 });
 
 export const createRequestSchema = z.object({
+  customerId: z.string().optional(),
   customerName: z.string().min(2, "Please enter your name (at least 2 characters)"),
   customerPhone: z
     .string()

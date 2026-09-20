@@ -32,7 +32,7 @@ const ISSUE_OPTIONS: { type: ServiceType; label: string; icon: React.ElementType
 export function QuickDispatchWidget() {
   const router = useRouter();
   const [selectedService, setSelectedService] = useState<ServiceType>("flat_tire");
-  const [locationInput, setLocationInput] = useState("Market St & 5th, San Francisco, CA");
+  const [locationInput, setLocationInput] = useState("Pari Chowk, Greater Noida, UP");
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
 
   const activeMeta = SERVICE_METAS[selectedService];
@@ -43,11 +43,11 @@ export function QuickDispatchWidget() {
       navigator.geolocation.getCurrentPosition(
         () => {
           setIsDetectingLocation(false);
-          setLocationInput("Current Location (37.7749, -122.4194 - SF)");
+          setLocationInput("Current Location (28.4744, 77.5040 - Pari Chowk)");
         },
         () => {
           setIsDetectingLocation(false);
-          setLocationInput("Current Location (GPS Pinpoint San Francisco)");
+          setLocationInput("Current Location (GPS Pinpoint Greater Noida)");
         },
         { timeout: 3000 }
       );
@@ -153,7 +153,7 @@ export function QuickDispatchWidget() {
               value={locationInput}
               onChange={(e) => setLocationInput(e.target.value)}
               placeholder="Street address, highway exit, or landmark..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-colors"
             />
           </div>
         </div>

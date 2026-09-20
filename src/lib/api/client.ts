@@ -1,13 +1,22 @@
 import { Mechanic, MechanicStatus, RoadsideRequest } from "@/types";
 import { CreateRequestInput, UpdateRequestStatusInput } from "../validations/request";
 
+export const AWS_API_BASE_URL = "https://nijdxn0jjb.execute-api.ap-south-1.amazonaws.com";
+
 /**
  * Returns the configured API Gateway base URL.
- * Defaults to empty string (which uses local fallback repository mode).
+ * Uses NEXT_PUBLIC_API_BASE_URL if set, or defaults to the deployed AWS API Gateway in the browser.
  */
 export function getApiBaseUrl(): string {
-  const url = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-  return url.replace(/\/+$/, "");
+  const url = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (url !== undefined && url !== "") {
+    return url.replace(/\/+$/, "");
+  }
+  // In browser runtime, always default to the live AWS API base URL
+  if (typeof window !== "undefined") {
+    return AWS_API_BASE_URL;
+  }
+  return "";
 }
 
 export function isApiConfigured(): boolean {
@@ -64,12 +73,15 @@ export const apiClient = {
     },
 
     async match(requestId: string): Promise<{
-      request: RoadsideRequest;
+      request?: RoadsideRequest;
       mechanic?: Mechanic;
       distanceKm?: number;
       estimatedArrivalMinutes?: number;
       explanation?: string;
       rankedCandidates?: Array<{ mechanicId: string; name: string; distanceKm: number }>;
+      success?: boolean;
+      failureReason?: string;
+      error?: string;
     }> {
       return request("/api/requests/match", {
         method: "POST",

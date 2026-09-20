@@ -33,9 +33,9 @@ import {
   MOCK_SAVED_VEHICLES,
 } from "@/lib/data/mock-data";
 import { VehicleType, BreakdownCategory, DemoLocation } from "@/types";
-import { createRequestSchema } from "@/lib/validations/request";
+import { createRequestSchema, CreateRequestInput } from "@/lib/validations/request";
 import { formatCurrency } from "@/lib/utils";
-import { requestStore } from "@/lib/data/store";
+import { apiClient } from "@/lib/api/client";
 import {
   requestBrowserGeolocation,
   validateCoordinates,
@@ -313,8 +313,11 @@ function RequestFlowContent() {
   const handleConfirmSubmit = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
+    setErrors({});
+
     try {
-      const newRequest = requestStore.create({
+      const payload: CreateRequestInput = {
+        customerId: "cust-" + Date.now().toString().slice(-6),
         customerName,
         customerPhone: phoneNumber,
         serviceType: breakdownCategory,
@@ -325,22 +328,30 @@ function RequestFlowContent() {
           type: vehicleType,
           make: vehicleBrandModel ? vehicleBrandModel.split(" ")[0] : vehicleType.toUpperCase(),
           model: vehicleBrandModel ? vehicleBrandModel.split(" ").slice(1).join(" ") : "Model",
+          year: 2022,
           licensePlate: "Pending",
+          isEV: false,
         },
         location: {
           address: locationAddress,
           coordinates,
-          landmark,
+          landmark: landmark || undefined,
           isDemo: !!selectedDemoId,
         },
-      });
+      };
 
-      // Forward to matching radar screen
+      const newRequest = await apiClient.requests.create(payload);
+      if (!newRequest?.id) {
+        throw new Error("No request ID returned from AWS API");
+      }
+
+      // Forward to matching radar screen with the real AWS request ID
       router.push(`/customer/matching/${newRequest.id}`);
     } catch (err) {
       console.error("Submission error:", err);
       setIsSubmitting(false);
-      setErrors({ form: "An unexpected error occurred. Please try again." });
+      const msg = err instanceof Error ? err.message : "An unexpected error occurred. Please try again.";
+      setErrors({ form: msg });
     }
   };
 
@@ -479,7 +490,7 @@ function RequestFlowContent() {
                 value={vehicleBrandModel}
                 onChange={(e) => setVehicleBrandModel(e.target.value)}
                 placeholder="e.g. Toyota RAV4, Tesla Model 3, Ford F-150, Honda Activa"
-                className="w-full mt-1.5 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                className="w-full mt-1.5 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-colors"
               />
             </div>
           </div>
@@ -552,7 +563,7 @@ function RequestFlowContent() {
                   }
                 }}
                 placeholder="e.g. Engine started clicking loudly and lost all acceleration on the ramp. Hazard lights are on."
-                className="w-full mt-1.5 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                className="w-full mt-1.5 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-colors"
               />
               {errors.issueDescription && (
                 <p className="text-xs text-rose-600 mt-1 font-medium">
@@ -642,7 +653,7 @@ function RequestFlowContent() {
                     setLocationAddress(e.target.value);
                     setSelectedDemoId("");
                   }}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-colors"
                 />
               </div>
               {errors.locationAddress && (
@@ -720,7 +731,7 @@ function RequestFlowContent() {
                 value={landmark}
                 onChange={(e) => setLandmark(e.target.value)}
                 placeholder="e.g. Near highway exit sign, hazard lights on"
-                className="w-full mt-1 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                className="w-full mt-1 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-colors"
               />
             </div>
           </div>
@@ -741,7 +752,7 @@ function RequestFlowContent() {
                   required
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full mt-1 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-sm"
+                  className="w-full mt-1 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-colors"
                 />
                 {errors.customerName && (
                   <p className="text-xs text-rose-600 mt-1 font-medium">
@@ -767,7 +778,7 @@ function RequestFlowContent() {
                       }
                     }}
                     placeholder="+1 (555) 000-0000"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-sm font-mono"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-colors"
                   />
                 </div>
                 {errors.customerPhone && (
@@ -926,7 +937,7 @@ function RequestFlowContent() {
                 className="w-full sm:w-auto px-8 font-bold text-base shadow-lg shadow-amber-500/20"
                 rightIcon={<ArrowRight className="w-5 h-5" />}
               >
-                Submit Roadside Request
+                Find Nearest Available Mechanic
               </Button>
             </div>
           </div>

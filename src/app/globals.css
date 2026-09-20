@@ -24,3 +24,9 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Form controls contrast safeguard */
+input, textarea, select {
+  color-scheme: light dark;
+}
+

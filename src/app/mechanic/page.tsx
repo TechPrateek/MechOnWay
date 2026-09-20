@@ -680,8 +680,8 @@ export default function MechanicDashboardPage() {
                     <span>{currentActiveJob.location.address}</span>
                   </div>
                   <div className="font-mono text-[11px] text-slate-500">
-                    GPS: {currentActiveJob.location.coordinates?.lat?.toFixed(5) ?? "37.77490"},{" "}
-                    {currentActiveJob.location.coordinates?.lng?.toFixed(5) ?? "-122.41940"}
+                    GPS: {currentActiveJob.location.coordinates?.lat?.toFixed(5) ?? "28.47440"},{" "}
+                    {currentActiveJob.location.coordinates?.lng?.toFixed(5) ?? "77.50400"}
                   </div>
                   {currentActiveJob.location.landmark && (
                     <div className="text-[11px] text-slate-600 dark:text-slate-400 italic">
@@ -775,7 +775,7 @@ export default function MechanicDashboardPage() {
                       value={activeJobNotes}
                       onChange={(e) => setActiveJobNotes(e.target.value)}
                       placeholder="e.g. Scanned OBD codes, tightened alternator belt, torqued lugs to 100 lb-ft."
-                      className="flex-1 px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                      className="flex-1 px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-colors"
                     />
                     <Button
                       onClick={() => {
@@ -977,7 +977,7 @@ export default function MechanicDashboardPage() {
                 value={historySearch}
                 onChange={(e) => setHistorySearch(e.target.value)}
                 placeholder="Filter by vehicle, customer, or address..."
-                className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-colors"
               />
             </div>
           </div>

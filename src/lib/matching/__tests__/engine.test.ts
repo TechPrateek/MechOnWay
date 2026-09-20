@@ -10,25 +10,26 @@ import {
   EARTH_RADIUS_KM,
 } from "../engine";
 import { Mechanic, MatchingRequestInput } from "@/types";
+import { MOCK_MECHANICS } from "../../data/mock-data";
 
 const mockMechanicBase: Mechanic = {
   mechanicId: "mech-01",
   id: "mech-01",
-  name: "Marcus Vance",
-  phone: "+1 (555) 234-8901",
-  avatarUrl: "/avatars/marcus.jpg",
-  rating: 4.9,
+  name: "Rajesh Sharma",
+  phone: "+91 98101 23456",
+  avatarUrl: "/avatars/rajesh.jpg",
+  rating: 4.95,
   completedJobsCount: 840,
-  vehicleRig: "Mobile Workshop Rig",
-  licensePlate: "7MC-8921",
-  supportedVehicleTypes: ["car", "suv", "motorcycle", "truck"],
+  vehicleRig: "Mahindra Bolero Mobile Workshop Rig",
+  licensePlate: "UP 16 AB 8921",
+  supportedVehicleTypes: ["car", "suv", "motorcycle", "truck", "sedan"],
   supportedServices: ["flat_tyre", "battery_issue", "engine_problem", "fuel_problem"],
-  latitude: 37.7749,
-  longitude: -122.4194,
+  latitude: 28.4780,
+  longitude: 77.5015,
   isAvailable: true,
   estimatedResponseTime: 5,
   currentStatus: "available",
-  certifications: ["ASE Master Certified"],
+  certifications: ["ITI Certified Automobile Master Technician"],
 };
 
 const sampleRequest: MatchingRequestInput = {
@@ -36,36 +37,36 @@ const sampleRequest: MatchingRequestInput = {
   customerId: "cust-01",
   vehicleType: "car",
   issueCategory: "flat_tyre",
-  description: "Punctured right tyre on highway shoulder",
-  latitude: 37.7699,
-  longitude: -122.4208,
+  description: "Punctured right tyre near Pari Chowk",
+  latitude: 28.4744,
+  longitude: 77.5040,
   status: "pending",
   createdAt: new Date().toISOString(),
 };
 
 describe("Haversine Distance Calculation (km)", () => {
   it("returns 0 km for identical coordinates", () => {
-    const dist = calculateDistance(37.7749, -122.4194, 37.7749, -122.4194);
+    const dist = calculateDistance(28.4744, 77.5040, 28.4744, 77.5040);
     expect(dist).toBe(0);
   });
 
-  it("calculates accurate distance between known SF coordinates", () => {
-    // SF Civic Center (37.7793, -122.4192) to Fisherman's Wharf (37.8080, -122.4177)
-    // Real straight-line distance is ~3.19 km
-    const dist = calculateDistance(37.7793, -122.4192, 37.808, -122.4177);
-    expect(dist).toBeGreaterThan(3.1);
-    expect(dist).toBeLessThan(3.3);
+  it("calculates accurate distance between Pari Chowk and Knowledge Park III in Greater Noida", () => {
+    // Pari Chowk (28.4744, 77.5040) to Knowledge Park III (28.4623, 77.4984)
+    // Real straight-line distance is ~1.46 km
+    const dist = calculateDistance(28.4744, 77.5040, 28.4623, 77.4984);
+    expect(dist).toBeGreaterThan(1.3);
+    expect(dist).toBeLessThan(1.6);
   });
 
-  it("calculates accurate distance between SF and Oakland across the Bay", () => {
-    // SF (37.7749, -122.4194) to Oakland Downtown (37.8044, -122.2712) ~13.4 km
-    const dist = calculateDistance(37.7749, -122.4194, 37.8044, -122.2712);
-    expect(dist).toBeGreaterThan(13.0);
-    expect(dist).toBeLessThan(14.0);
+  it("calculates accurate distance between Pari Chowk and Sector 62 Noida", () => {
+    // Pari Chowk (28.4744, 77.5040) to Sector 62 Noida (28.6280, 77.3649) ~21.7 km
+    const dist = calculateDistance(28.4744, 77.5040, 28.6280, 77.3649);
+    expect(dist).toBeGreaterThan(20.0);
+    expect(dist).toBeLessThan(23.0);
   });
 
   it("validates coordinate boundaries correctly", () => {
-    expect(isValidCoordinate(37.7, -122.4)).toBe(true);
+    expect(isValidCoordinate(28.47, 77.50)).toBe(true);
     expect(isValidCoordinate(90, 180)).toBe(true);
     expect(isValidCoordinate(-90, -180)).toBe(true);
 
@@ -80,15 +81,23 @@ describe("Haversine Distance Calculation (km)", () => {
     expect(EARTH_RADIUS_KM).toBe(6371);
   });
 
-  it("calculates arrival time estimate using base prep time and distance", () => {
-    // 5 mins base + (20 km / 40 km/h) * 60 = 5 + 30 = 35 mins
-    const eta = estimateArrivalTimeMinutes(5, 20);
-    expect(eta).toBe(35);
+  it("calculates arrival time estimate using realistic 35 km/h urban transit speed and base prep", () => {
+    // 5 mins base + (20 km / 35 km/h) * 60 = 5 + 34.28 = 39 mins
+    const eta20 = estimateArrivalTimeMinutes(5, 20);
+    expect(eta20).toBe(39);
+
+    // 5 mins base + (35 km / 35 km/h) * 60 = 5 + 60 = 65 mins
+    const eta35 = estimateArrivalTimeMinutes(5, 35);
+    expect(eta35).toBe(65);
+
+    // Proximity dispatch: 0.47 km (Pari Chowk technician) -> 5 + 0.8 = 6 mins
+    const etaProximity = estimateArrivalTimeMinutes(5, 0.47);
+    expect(etaProximity).toBe(6);
   });
 
   it("throws an error when passing invalid coordinates to calculateDistance", () => {
-    expect(() => calculateDistance(100, 0, 37.7, -122.4)).toThrow(/Invalid coordinates/);
-    expect(() => calculateDistance(37.7, -122.4, NaN, -122.4)).toThrow(/Invalid coordinates/);
+    expect(() => calculateDistance(100, 0, 28.47, 77.50)).toThrow(/Invalid coordinates/);
+    expect(() => calculateDistance(28.47, 77.50, NaN, 77.50)).toThrow(/Invalid coordinates/);
   });
 });
 
@@ -149,16 +158,16 @@ describe("Deterministic Ranking & Tie Breaking", () => {
     const closeMechanic: Mechanic = {
       ...mockMechanicBase,
       mechanicId: "mech-close",
-      latitude: 37.771, // Very close to request (37.7699)
-      longitude: -122.421,
+      latitude: 28.4780, // Alpha 1 (~0.47 km from Pari Chowk)
+      longitude: 77.5015,
       rating: 4.5,
     };
 
     const farMechanic: Mechanic = {
       ...mockMechanicBase,
       mechanicId: "mech-far",
-      latitude: 37.82, // Farther away
-      longitude: -122.38,
+      latitude: 28.6280, // Sector 62 Noida (~21.7 km away)
+      longitude: 77.3649,
       rating: 5.0, // higher rating, but farther
     };
 
@@ -173,16 +182,16 @@ describe("Deterministic Ranking & Tie Breaking", () => {
     const higherRating: Mechanic = {
       ...mockMechanicBase,
       mechanicId: "mech-high-rating",
-      latitude: 37.775,
-      longitude: -122.419,
+      latitude: 28.4780,
+      longitude: 77.5015,
       rating: 4.95,
     };
 
     const lowerRating: Mechanic = {
       ...mockMechanicBase,
       mechanicId: "mech-low-rating",
-      latitude: 37.775,
-      longitude: -122.419,
+      latitude: 28.4780,
+      longitude: 77.5015,
       rating: 4.6,
     };
 
@@ -194,16 +203,16 @@ describe("Deterministic Ranking & Tie Breaking", () => {
     const mechA: Mechanic = {
       ...mockMechanicBase,
       mechanicId: "mech-alpha",
-      latitude: 37.775,
-      longitude: -122.419,
+      latitude: 28.4780,
+      longitude: 77.5015,
       rating: 4.8,
     };
 
     const mechZ: Mechanic = {
       ...mockMechanicBase,
       mechanicId: "mech-zeta",
-      latitude: 37.775,
-      longitude: -122.419,
+      latitude: 28.4780,
+      longitude: 77.5015,
       rating: 4.8,
     };
 
@@ -219,9 +228,36 @@ describe("Nearest Mechanic Assignment & Edge Cases", () => {
     expect(result.selectedMechanic?.mechanicId).toBe("mech-01");
     expect(typeof result.distanceKm).toBe("number");
     expect(result.distanceKm).toBeGreaterThan(0);
+    expect(result.distanceKm).toBeLessThan(1.0); // Pari Chowk to Alpha 1 is ~0.47 km
     expect(typeof result.estimatedArrivalMinutes).toBe("number");
-    expect(result.explanation).toContain("Matched Marcus Vance");
+    expect(result.estimatedArrivalMinutes).toBeLessThan(10); // realistic arrival < 10 mins
+    expect(result.explanation).toContain("Matched Rajesh Sharma");
     expect(result.eligibleCount).toBe(1);
+  });
+
+  it("ranks real Delhi NCR demo mechanics and selects closest candidate", () => {
+    // Pari Chowk test request (28.4744, 77.5040) with MOCK_MECHANICS
+    const result = assignNearestMechanic(sampleRequest, MOCK_MECHANICS);
+    expect(result.success).toBe(true);
+    expect(result.selectedMechanic?.id).toBe("mech-001"); // Rajesh Sharma is ~0.47 km away
+    expect(result.distanceKm).toBeCloseTo(0.47, 1);
+    expect(result.estimatedArrivalMinutes).toBe(6);
+    expect(result.rankedCandidates).toBeDefined();
+    // Busy mech-005 should be excluded
+    const candidateIds = result.rankedCandidates?.map((c) => c.mechanicId);
+    expect(candidateIds).not.toContain("mech-005");
+  });
+
+  it("handles out-of-coverage requests (>75 km) cleanly without thousands of minutes", () => {
+    const jaipurRequest: MatchingRequestInput = {
+      ...sampleRequest,
+      latitude: 26.9124, // Jaipur, Rajasthan (~235 km from Greater Noida)
+      longitude: 75.7873,
+    };
+    const result = assignNearestMechanic(jaipurRequest, MOCK_MECHANICS);
+    expect(result.success).toBe(false);
+    expect(result.failureReason).toBe("no_available");
+    expect(result.explanation).toContain("75 km");
   });
 
   it("handles empty mechanics list with helpful explanation", () => {
@@ -244,15 +280,16 @@ describe("Nearest Mechanic Assignment & Edge Cases", () => {
   });
 
   it("handles unsupported vehicle type with clear diagnostic explanation", () => {
-    const motorcycleRequest: MatchingRequestInput = {
+    const truckRequest: MatchingRequestInput = {
       ...sampleRequest,
       vehicleType: "truck",
     };
-    const scooterOnlyMech: Mechanic = {
+    const carOnlyMech: Mechanic = {
       ...mockMechanicBase,
-      supportedVehicleTypes: ["scooter", "motorcycle"],
+      supportedVehicleTypes: ["car"],
+      compatibleVehicleTypes: ["car"],
     };
-    const result = assignNearestMechanic(motorcycleRequest, [scooterOnlyMech]);
+    const result = assignNearestMechanic(truckRequest, [carOnlyMech]);
     expect(result.success).toBe(false);
     expect(result.failureReason).toBe("no_vehicle_match");
     expect(result.explanation).toContain("TRUCK");
@@ -266,6 +303,7 @@ describe("Nearest Mechanic Assignment & Edge Cases", () => {
     const tireOnlyMech: Mechanic = {
       ...mockMechanicBase,
       supportedServices: ["flat_tyre"],
+      specializations: ["flat_tyre"],
     };
     const result = assignNearestMechanic(overheatRequest, [tireOnlyMech]);
     expect(result.success).toBe(false);
@@ -292,7 +330,7 @@ describe("Privacy & Phone Masking", () => {
   });
 
   it("masks raw numbers while preserving prefix and suffix", () => {
-    expect(maskPhoneNumber("5552348901")).toBe("555•••8901");
+    expect(maskPhoneNumber("9810123456")).toBe("981•••3456");
   });
 
   it("returns safe placeholder for empty or missing numbers", () => {

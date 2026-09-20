@@ -293,7 +293,8 @@ export const requestStore = {
         .match(requestId)
         .then((res) => {
           if (res && res.request) {
-            const all = this.listAll().map((r) => (r.id === requestId ? res.request : r));
+            const updatedRequest: RoadsideRequest = res.request;
+            const all = this.listAll().map((r) => (r.id === requestId ? updatedRequest : r));
             persistRequests(all);
           }
         })

@@ -133,6 +133,13 @@ export class DynamoDBRequestRepository implements IRequestRepository {
       throw new Error(`Failed to delete request ${id} from DynamoDB`);
     }
   }
+
+  async reset(initial?: RoadsideRequest[]): Promise<void> {
+    const list = initial || MOCK_REQUESTS;
+    for (const req of list) {
+      await this.create(req);
+    }
+  }
 }
 
 export class DynamoDBMechanicRepository implements IMechanicRepository {
@@ -248,6 +255,13 @@ export class DynamoDBMechanicRepository implements IMechanicRepository {
     } catch (err) {
       console.error(`DynamoDB updateStatus error on ${this.tableName}:`, err);
       throw new Error(`Failed to update mechanic status in DynamoDB`);
+    }
+  }
+
+  async reset(initial?: Mechanic[]): Promise<void> {
+    const list = initial || MOCK_MECHANICS;
+    for (const mech of list) {
+      await this.save(mech);
     }
   }
 }

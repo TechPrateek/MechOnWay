@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/common/button";
 import { StatusIndicator } from "@/components/common/status-indicator";
-import { requestStore, mechanicStore } from "@/lib/data/store";
+import { apiClient } from "@/lib/api/client";
 import { RoadsideRequest, RequestStatus } from "@/types";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { maskPhoneNumber } from "@/lib/matching/engine";
@@ -29,19 +29,42 @@ export default function RequestTrackingPage() {
   const params = useParams<{ requestId: string }>();
   const requestId = params?.requestId;
 
-  const [request, setRequest] = useState<RoadsideRequest | null>(() => {
-    if (!requestId) return null;
-    return requestStore.getById(requestId) ?? null;
-  });
-
-  const [etaMinutes, setEtaMinutes] = useState<number>(() => {
-    if (!requestId) return 7;
-    const req = requestStore.getById(requestId);
-    return req?.estimatedArrivalMinutes || 7;
-  });
-
+  const [request, setRequest] = useState<RoadsideRequest | null>(null);
+  const [loading, setLoading] = useState<boolean>(() => Boolean(requestId));
+  const [etaMinutes, setEtaMinutes] = useState<number>(7);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
   const [isAdvancing, setIsAdvancing] = useState<boolean>(false);
+
+  // Fetch live request from AWS API and poll every 8 seconds
+  useEffect(() => {
+    if (!requestId) {
+      return;
+    }
+
+    let mounted = true;
+    async function load() {
+      try {
+        const data = await apiClient.requests.get(requestId);
+        if (mounted && data) {
+          setRequest(data);
+          if (data.estimatedArrivalMinutes) {
+            setEtaMinutes(data.estimatedArrivalMinutes);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load request from AWS API:", err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    load();
+    const timer = setInterval(load, 8000);
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+    };
+  }, [requestId]);
 
   // Live countdown simulation
   useEffect(() => {
@@ -52,7 +75,7 @@ export default function RequestTrackingPage() {
     return () => clearInterval(interval);
   }, [request]);
 
-  const handleAdvanceStatus = () => {
+  const handleAdvanceStatus = async () => {
     if (!request || isAdvancing) return;
     setIsAdvancing(true);
 
@@ -74,7 +97,7 @@ export default function RequestTrackingPage() {
     }
 
     try {
-      const updated = requestStore.updateStatus(request.id, {
+      const updated = await apiClient.requests.updateStatus(request.id, {
         status: nextStatus,
         diagnosticNotes:
           nextStatus === "COMPLETED"
@@ -84,7 +107,7 @@ export default function RequestTrackingPage() {
 
       if (updated) {
         setRequest({ ...updated });
-        setActionNotice(`Demo status advance: now ${nextStatus.replace(/_/g, " ")}`);
+        setActionNotice(`Status updated: now ${nextStatus.replace(/_/g, " ")}`);
         setTimeout(() => setActionNotice(null), 3500);
       }
     } catch (err: unknown) {
@@ -98,7 +121,7 @@ export default function RequestTrackingPage() {
 
   const canCancel = request ? isStatusTransitionAllowed(request.status, "CANCELLED") : false;
 
-  const handleCancelRequest = () => {
+  const handleCancelRequest = async () => {
     if (!request) return;
     if (!canCancel) {
       alert("This request cannot be cancelled at this stage.");
@@ -106,7 +129,7 @@ export default function RequestTrackingPage() {
     }
     if (confirm("Are you sure you want to cancel this roadside assistance request?")) {
       try {
-        const updated = requestStore.cancelRequest(
+        const updated = await apiClient.requests.cancel(
           request.id,
           "Cancelled by motorist from live tracking dashboard"
         );
@@ -122,6 +145,17 @@ export default function RequestTrackingPage() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-24 text-center space-y-3">
+        <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+          Loading live dispatch telemetry from AWS...
+        </p>
+      </div>
+    );
+  }
+
   if (!request) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-16 text-center space-y-3">
@@ -129,7 +163,7 @@ export default function RequestTrackingPage() {
           Request Not Found
         </h2>
         <p className="text-sm text-slate-500">
-          Unable to locate roadside request: {requestId}
+          Unable to locate roadside request: {requestId} on AWS
         </p>
         <Link href="/customer">
           <Button variant="primary" className="mt-4">
@@ -151,9 +185,7 @@ export default function RequestTrackingPage() {
   const normalizedCurrent = normalizeRequestStatus(request.status);
   const currentStageIndex = stages.findIndex((s) => s.status === normalizedCurrent);
 
-  const assignedTech =
-    request.assignedMechanic ||
-    (request.assignedMechanicId ? mechanicStore.getById(request.assignedMechanicId) : null);
+  const assignedTech = request.assignedMechanic || null;
 
   const mechanic = assignedTech || {
     name: "Elena Rostova",

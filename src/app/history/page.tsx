@@ -9,14 +9,35 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/common/button";
 import { StatusIndicator } from "@/components/common/status-indicator";
-import { useRequests } from "@/lib/data/use-store";
+import { apiClient } from "@/lib/api/client";
+import { RoadsideRequest } from "@/types";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { normalizeRequestStatus } from "@/lib/lifecycle/status-machine";
 
 export default function HistoryPage() {
-  const requests = useRequests();
+  const [requests, setRequests] = useState<RoadsideRequest[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  React.useEffect(() => {
+    let mounted = true;
+    apiClient.requests.list()
+      .then((data) => {
+        if (mounted && Array.isArray(data)) {
+          setRequests(data);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load history from AWS API:", err);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const filtered = requests.filter((r) => {
     const norm = normalizeRequestStatus(r.status);
@@ -69,7 +90,7 @@ export default function HistoryPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by vehicle, breakdown issue, mechanic, or location..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-colors"
           />
         </div>
 
@@ -109,7 +130,11 @@ export default function HistoryPage() {
 
       {/* Results List */}
       <div className="space-y-4">
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 text-slate-500 text-sm animate-pulse">
+            Loading service history from AWS...
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 text-slate-500 text-sm">
             No roadside requests match your filter.
           </div>
