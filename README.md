@@ -8,7 +8,7 @@
 [![Tests Passing](https://img.shields.io/badge/Tests-108%20Passed-brightgreen?style=for-the-badge)](https://vitest.dev/)
 
 > **Built for the WeMakeDevs "First Commit" Hackathon — Bharat Builds Tour 2026**  
-> **Track:** Ship It (Live Cloud Deployment on AWS) & Best UI  
+> **Tracks:** Build It (Full-Stack Innovation) | Ship It (Live AWS Cloud Deployment) | Best UI  
 > 🌐 **Live Web Application (AWS Amplify):** [https://main.d1vqbdcnkkxe6z.amplifyapp.com](https://main.d1vqbdcnkkxe6z.amplifyapp.com)  
 > ⚡ **Live Serverless API (AWS API Gateway):** [https://nijdxn0jjb.execute-api.ap-south-1.amazonaws.com](https://nijdxn0jjb.execute-api.ap-south-1.amazonaws.com)  
 > 📦 **GitHub Repository:** [https://github.com/TechPrateek/MechOnWay](https://github.com/TechPrateek/MechOnWay)  
