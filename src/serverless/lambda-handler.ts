@@ -43,21 +43,21 @@ interface LambdaHttpResponse {
   body: string;
 }
 
-function jsonResponse(statusCode: number, data: unknown): LambdaHttpResponse {
-  return {
-    statusCode,
-    headers: CORS_HEADERS,
-    body: JSON.stringify(data),
-  };
-}
-
 export async function handler(event: LambdaHttpEvent): Promise<LambdaHttpResponse> {
-  const method = (
+  const rawMethod = (
     event.requestContext?.http?.method ||
     event.httpMethod ||
     event.requestContext?.httpMethod ||
     "GET"
   ).toUpperCase();
+  const isHead = rawMethod === "HEAD";
+  const method = isHead ? "GET" : rawMethod;
+
+  const jsonResponse = (statusCode: number, data: unknown): LambdaHttpResponse => ({
+    statusCode,
+    headers: CORS_HEADERS,
+    body: isHead ? "" : JSON.stringify(data),
+  });
 
   const rawPath = event.rawPath || event.path || event.requestContext?.http?.path || "/";
   // Strip query string and remove trailing slashes for resilient route matching
