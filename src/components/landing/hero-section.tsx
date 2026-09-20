@@ -64,10 +64,10 @@ export function HeroSection() {
               </div>
               <div>
                 <p className="text-2xl sm:text-3xl font-bold font-mono text-slate-950 dark:text-white">
-                  184
+                  100%
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                  Mobile Units Online
+                  Vetted Mechanics
                 </p>
               </div>
               <div>

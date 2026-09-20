@@ -44,14 +44,6 @@ export function Navbar() {
                 </span>
               </div>
             </Link>
-
-            {/* Region Live Telemetry */}
-            <div className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800/60 text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span className="font-medium">Pan-India Network</span>
-              <span className="text-slate-300 dark:text-slate-600">•</span>
-              <span className="text-slate-500 dark:text-slate-400">180+ Verified Units</span>
-            </div>
           </div>
 
           {/* Desktop Nav Links */}
@@ -145,14 +137,6 @@ export function Navbar() {
       {/* Mobile dropdown menu */}
       {mobileMenuOpen && (
         <div className="md:hidden border-b border-slate-200 bg-white dark:bg-slate-950 dark:border-slate-800 px-4 pt-2 pb-6 space-y-2">
-          <div className="py-2 px-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs flex items-center justify-between text-slate-600 dark:text-slate-300 mb-3">
-            <span className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Pan-India Network
-            </span>
-            <span className="font-semibold text-slate-900 dark:text-white">180+ Online</span>
-          </div>
-
           <Link
             href="/"
             onClick={() => setMobileMenuOpen(false)}
@@ -191,11 +175,11 @@ export function Navbar() {
 
           <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2">
             <a
-              href="tel:+18005556324"
+              href="tel:18001236324"
               className="flex items-center justify-center gap-2 py-2.5 px-4 text-sm font-medium rounded-lg text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900"
             >
               <PhoneCall className="w-4 h-4 text-slate-500" />
-              Toll-Free Helpline (1-800-555-MECH)
+              Toll-Free Helpline (1800-123-MECH)
             </a>
           </div>
         </div>
