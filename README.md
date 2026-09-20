@@ -2,7 +2,9 @@
 
 > **Built for the WeMakeDevs "First Commit" Hackathon — Bharat Builds Tour 2026**  
 > **Track:** Ship It (Live Cloud Deployment on AWS) & Best UI  
-> **Repository:** [https://github.com/TechPrateek/MechOnWay](https://github.com/TechPrateek/MechOnWay)
+> 🌐 **Live Web Application (AWS Amplify):** [https://main.d1vqbdcnkkxe6z.amplifyapp.com](https://main.d1vqbdcnkkxe6z.amplifyapp.com)  
+> ⚡ **Live Serverless API (AWS API Gateway):** [https://nijdxn0jjb.execute-api.ap-south-1.amazonaws.com](https://nijdxn0jjb.execute-api.ap-south-1.amazonaws.com)  
+> 📦 **GitHub Repository:** [https://github.com/TechPrateek/MechOnWay](https://github.com/TechPrateek/MechOnWay)  
 
 ---
 
