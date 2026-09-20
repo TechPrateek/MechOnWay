@@ -87,6 +87,25 @@ export async function handler(event: LambdaHttpEvent): Promise<LambdaHttpRespons
       }
     };
 
+    // Route: Root Health Check (GET / or GET /api)
+    if ((path === "/" || path === "" || path === "/api") && method === "GET") {
+      return jsonResponse(200, {
+        success: true,
+        service: "MechOnWay Serverless Dispatch API",
+        status: "healthy",
+        version: "1.0.0",
+        documentation: "https://github.com/TechPrateek/MechOnWay",
+        endpoints: {
+          mechanics: "GET /api/mechanics",
+          requests: "GET /api/requests",
+          createRequest: "POST /api/requests",
+          matchRequest: "POST /api/requests/match",
+          requestDetail: "GET /api/requests/{id}",
+          updateRequest: "PATCH /api/requests/{id}",
+        },
+      });
+    }
+
     // Route: /api/requests/match
     if (path.endsWith("/api/requests/match") || path.endsWith("/requests/match")) {
       if (method === "POST") {
