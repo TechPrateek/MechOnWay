@@ -1,4 +1,4 @@
-﻿import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
   GetCommand,
@@ -9,6 +9,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { Mechanic, MechanicStatus, RoadsideRequest } from "@/types";
 import { IMechanicRepository, IRequestRepository } from "./types";
+import { MOCK_REQUESTS, MOCK_MECHANICS } from "../data/mock-data";
 
 function getDynamoDocClient(): DynamoDBDocumentClient {
   const client = new DynamoDBClient({
@@ -56,6 +57,23 @@ export class DynamoDBRequestRepository implements IRequestRepository {
         })
       );
       const items = (response.Items as RoadsideRequest[]) || [];
+      if (items.length === 0) {
+        try {
+          await Promise.all(
+            MOCK_REQUESTS.map((req) =>
+              this.docClient.send(
+                new PutCommand({
+                  TableName: this.tableName,
+                  Item: { ...req, requestId: req.id },
+                })
+              )
+            )
+          );
+          return [...MOCK_REQUESTS];
+        } catch {
+          return [...MOCK_REQUESTS];
+        }
+      }
       // Sort newest first
       return items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     } catch (err) {
@@ -148,7 +166,25 @@ export class DynamoDBMechanicRepository implements IMechanicRepository {
           TableName: this.tableName,
         })
       );
-      return (response.Items as Mechanic[]) || [];
+      const items = (response.Items as Mechanic[]) || [];
+      if (items.length === 0) {
+        try {
+          await Promise.all(
+            MOCK_MECHANICS.map((mech) =>
+              this.docClient.send(
+                new PutCommand({
+                  TableName: this.tableName,
+                  Item: { ...mech, mechanicId: mech.mechanicId || mech.id },
+                })
+              )
+            )
+          );
+          return [...MOCK_MECHANICS];
+        } catch {
+          return [...MOCK_MECHANICS];
+        }
+      }
+      return items;
     } catch (err) {
       console.error(`DynamoDB listAll error on ${this.tableName}:`, err);
       throw new Error(`Failed to list mechanics from DynamoDB`);

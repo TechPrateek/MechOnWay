@@ -11,6 +11,12 @@ Parameters:
     AllowedValues: [dev, staging, prod]
     Description: Deployment stage environment.
 
+  StorageProvider:
+    Type: String
+    Default: dynamodb
+    AllowedValues: [dynamodb, local]
+    Description: Storage backend provider (dynamodb for cloud deployment, local for SAM local testing).
+
 Globals:
   Function:
     Timeout: 15
@@ -127,7 +133,7 @@ Resources:
 
       Environment:
         Variables:
-          STORAGE_PROVIDER: local
+          STORAGE_PROVIDER: !Ref StorageProvider
           LOCAL_DATA_DIR: /tmp/mechonway-data
           DYNAMODB_TABLE_REQUESTS: !Ref RequestsTable
           DYNAMODB_TABLE_MECHANICS: !Ref MechanicsTable

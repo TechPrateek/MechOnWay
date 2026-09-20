@@ -1,7 +1,7 @@
 # 🚗 MechOnWay — On-Demand Intelligent Roadside Assistance
 
 > **Built for the WeMakeDevs "First Commit" Hackathon — Bharat Builds Tour 2026**  
-> **Track:** Build It (Open-Source AWS Local Stack with AWS SAM) & Best UI  
+> **Track:** Ship It (Live Cloud Deployment on AWS) & Best UI  
 > **Repository:** [https://github.com/TechPrateek/MechOnWay](https://github.com/TechPrateek/MechOnWay)
 
 ---
@@ -88,7 +88,40 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## ⚡ Running with AWS SAM Local
+## ☁️ Deploying Live to AWS ("Ship It" Track)
+
+MechOnWay deploys to AWS as a production serverless cloud application:
+
+### 1. Deploy the Serverless Backend (AWS SAM)
+```bash
+# Build Lambda artifacts
+sam build --region ap-south-1
+
+# Deploy to AWS (interactive wizard)
+sam deploy --guided
+```
+- **Stack Name**: `mechonway-backend`
+- **AWS Region**: `ap-south-1` (or your preferred region)
+- **Parameter Environment**: `prod`
+- **Parameter StorageProvider**: `dynamodb`
+- SAM automatically provisions:
+  - `MechOnWayHttpApi` (HTTP API Gateway)
+  - `MechOnWay-Requests-prod` (Amazon DynamoDB Table)
+  - `MechOnWay-Mechanics-prod` (Amazon DynamoDB Table)
+  - `mechonway-backend-prod` (AWS Lambda on ARM64 Graviton)
+- Save the output `ApiEndpoint` (e.g. `https://xxxx.execute-api.ap-south-1.amazonaws.com`).
+
+### 2. Deploy Frontend on AWS Amplify Hosting
+1. Go to the [AWS Amplify Console](https://console.aws.amazon.com/amplify).
+2. Choose **Host web app** and connect your GitHub repository (`TechPrateek/MechOnWay`).
+3. Amplify detects [`amplify.yml`](./amplify.yml) automatically.
+4. Under **Environment variables**, set:
+   - `NEXT_PUBLIC_API_BASE_URL`: `https://[your-api-id].execute-api.ap-south-1.amazonaws.com`
+5. Click **Save and Deploy**. Your live URL will be ready at `https://main.xxxxxx.amplifyapp.com`!
+
+---
+
+## ⚡ Running with AWS SAM Local (Local Testing)
 
 You can run the backend serverless API entirely locally using AWS SAM CLI without an AWS account:
 
